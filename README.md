@@ -1,5 +1,5 @@
-# IanardoCogs
-Various cogs for RedBot.
+# xNightWulfCogs
+Various cogs for Discord bot.
 
 # Installation
 To install the cogs, follow the given steps:
@@ -7,14 +7,14 @@ To install the cogs, follow the given steps:
 **Step 1** - Adding the repo.
 > To add the repo, type this into the chat:
 > 
-> ``[p]repo add IanardoCogs https://github.com/Ianardo-DiCaprio/IanardoCogs``
+> ``[p]repo add xNightWulfCogs https://github.com/xNightWulf69/xNightWulfCogs``
 > 
 > Then type,"I agree".
 
 **Step 2** - Adding the cog.
 > To add the cog, type this into the chat:
 > 
-> ``[p]cog install IanardoCogs <cog_name>``
+> ``[p]cog install xNightWulfCogs <cog_name>``
 
 
 | Name | Status | Description (Click to see full status)
