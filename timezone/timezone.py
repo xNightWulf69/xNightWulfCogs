@@ -12,17 +12,8 @@ class TIMEZONE(commands.Cog):
     @commands.cooldown(1, 300, commands.BucketType.user)
     async def time(self, ctx, *, timezone: str = None):
         """Shows the current time in the specified timezone, or in the UK and all the USA timezones if no timezone is specified."""
-        # Create a dictionary mapping timezone names to user-friendly names
-        timezone_names = {
-            "Europe/London": "UK",
-            "America/New_York": "US Eastern",
-            "America/Chicago": "US Central",
-            "America/Denver": "US Mountain",
-            "America/Los_Angeles": "US Pacific",
-        }
-
-        # Create a list of the default timezones (Europe/London, America/New_York, America/Chicago, America/Denver, and America/Los_Angeles)
-        timezones = ["Europe/London", "America/New_York", "America/Chicago", "America/Denver", "America/Los_Angeles"]
+        # Create a list of the default timezones (UK and all the USA timezones)
+        timezones = ["Europe/London", "US-Eastern", "US-Central", "US-Mountain", "US-Pacific"]
 
         if timezone is not None:
             # If a timezone is specified, add it to the list
@@ -36,9 +27,16 @@ class TIMEZONE(commands.Cog):
 
         # Add each timezone and its corresponding time as a field to the embed
         for timezone, time in zip(timezones, results):
-            # Look up the user-friendly name for the timezone using the timezone_names dictionary
-            name = timezone_names.get(timezone, timezone)
-            embed.add_field(name=name, value=time, inline=False)
+            embed.add_field(name=timezone, value=time, inline=False)
 
         # Send the embed to the Discord channel
         await ctx.send(embed=embed)
+
+    async def get_time(self, timezone):
+        """Gets the current time in the specified timezone."""
+        # Use the pytz module to get the timezone object for the specified timezone
+        tz = pytz.timezone(timezone)
+        # Use the datetime module to get the current time in the specified timezone
+        current_time = datetime.datetime.now(tz=tz)
+        # Format the time as a string and return it
+        return current_time.strftime('%H:%M:%S')
