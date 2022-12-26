@@ -38,7 +38,7 @@ class TIMEZONE(commands.Cog):
         results = await asyncio.gather(*[self.get_time(tz) for tz in timezones])
 
         # Get the current time in the UK
-        uk_time = self.get_time("Europe/London")
+        uk_time = await self.get_time("Europe/London")
 
         # Parse the string returned by the get_time function into a datetime object
         uk_datetime = datetime.datetime.strptime(uk_time, "%H:%M:%S")
