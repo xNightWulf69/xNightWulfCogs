@@ -41,7 +41,7 @@ class TIMEZONE(commands.Cog):
         uk_time = await self.get_time("Europe/London")
 
         # Parse the string returned by the get_time function into a datetime object
-        uk_datetime = datetime.datetime.strptime(uk_time, "%H:%M:%S")
+        uk_datetime = datetime.datetime.strptime(uk_time, "%I:%M %p %Z"")
 
         # Get the hour of the current time in the UK
         uk_hour = uk_datetime.hour
