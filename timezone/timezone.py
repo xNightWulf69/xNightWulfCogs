@@ -50,7 +50,8 @@ class TIMEZONE(commands.Cog):
         if 3 <= uk_hour < 11:
             embed.color = discord.Color.red()
         elif 11 <= uk_hour < 21:
-            embed.color = discord.Color.yellow()
+            yellow = discord.Colour.from_rgb(255, 255, 0)
+            embed.color = yellow 
         else:
             embed.color = discord.Color.green()
 
