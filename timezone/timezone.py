@@ -32,7 +32,7 @@ class TIMEZONE(commands.Cog):
         embed = discord.Embed()
 
         # Set the thumbnail of the embed to an image of a clock
-        embed.set_thumbnail(url="https://i.imgur.com/cJLKZvB.png")
+        embed.set_thumbnail(url="https://purepng.com/public/uploads/large/purepng.com-wall-clockclockbelltimewall-clockwhiteblacksquareround-1421526462960il1m2.png")
 
         # Use asyncio to run multiple tasks concurrently
         results = await asyncio.gather(*[self.get_time(tz) for tz in timezones])
@@ -41,7 +41,7 @@ class TIMEZONE(commands.Cog):
         for timezone, time in zip(timezones, results):
             # Look up the user-friendly name for the timezone using the timezone_names dictionary
             name = timezone_names.get(timezone, timezone)
-            embed.add_field(name=name, value=time, inline=True)
+            embed.add_field(name=name, value=time, inline=False)
 
         # Send the embed to the Discord channel
         await ctx.send(embed=embed)
