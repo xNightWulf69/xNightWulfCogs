@@ -1,6 +1,6 @@
-from .timezone import TimeZoneModule
+from .timezone import TIMEZONE
 
 
 async def setup(bot):
-    cog = TimeZoneModule(bot)
+    cog = TIMEZONE(bot)
     bot.add_cog(cog)
