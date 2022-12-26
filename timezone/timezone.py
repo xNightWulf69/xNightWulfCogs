@@ -13,7 +13,7 @@ class TIMEZONE(commands.Cog):
     async def time(self, ctx, *, timezone: str = None):
         """Shows the current time in the specified timezone, or in the UK and all the USA timezones if no timezone is specified."""
         # Create a list of the default timezones (UK and all the USA timezones)
-        timezones = ["Europe/London", "America/New_York", "America/Chicago", "America/Denver", "America/Los_Angeles"
+        timezones = ["Europe/London", "America/New_York", "America/Chicago", "America/Denver", "America/Los_Angeles"]
 
         if timezone is not None:
             # If a timezone is specified, add it to the list
