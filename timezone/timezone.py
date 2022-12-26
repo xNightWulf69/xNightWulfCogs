@@ -37,6 +37,20 @@ class TIMEZONE(commands.Cog):
         # Use asyncio to run multiple tasks concurrently
         results = await asyncio.gather(*[self.get_time(tz) for tz in timezones])
 
+        # Get the current time in the UK
+        uk_time = self.get_time("Europe/London")
+
+        # Get the hour of the current time in the UK
+        uk_hour = int(uk_time[:2])
+
+        # Set the color of the embed based on the current time in the UK
+        if 3 <= uk_hour < 11:
+            embed.color = discord.Color.red()
+        elif 11 <= uk_hour < 21:
+            embed.color = discord.Color.yellow()
+        else:
+            embed.color = discord.Color.green()
+
         # Add each timezone and its corresponding time as a field to the embed
         for timezone, time in zip(timezones, results):
             # Look up the user-friendly name for the timezone using the timezone_names dictionary
