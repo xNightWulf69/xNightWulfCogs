@@ -4,7 +4,7 @@ import discord
 import pytz
 from redbot.core import commands
 
-class TimezoneModule(commands.Cog):
+class TIMEZONE(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
