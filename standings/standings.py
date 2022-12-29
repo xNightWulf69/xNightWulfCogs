@@ -43,7 +43,7 @@ class Standings(commands.Cog):
             invisible_space = "             "
             embed.add_field(
                 name=team,
-                value=f"GamesPlayed: {stats['gp']} " + " " + " " + " " + "| 🏆: {stats['gw']} {invisible_space}| 🔻: {stats['gl']} {invisible_space}| **％**: {win_percentage:.2f}",
+                value=f"GamesPlayed: {stats['gp']} " + " " + " " + " " + f"| 🏆: {stats['gw']} {invisible_space}| 🔻: {stats['gl']} {invisible_space}| **％**: {win_percentage:.2f}",
                 inline=False,
             )
         await ctx.send(embed=embed)
