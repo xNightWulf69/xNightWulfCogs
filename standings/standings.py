@@ -1,4 +1,5 @@
 import discord
+import time
 from redbot.core import commands, Config
 
 class Standings(commands.Cog):
@@ -31,7 +32,10 @@ class Standings(commands.Cog):
         sorted_teams = sorted(
             teams.items(), key=lambda x: (-x[1]["gw"], x[1]["gp"]), reverse=False
         )
-        embed = discord.Embed(title="League Standings", color=discord.Color.blue())
+        timestamp = time.time()
+        int_number = int(timestamp)
+        unix = "<t:{}:D>".format(int_number)
+        embed = discord.Embed(title="League Standings", description=unix, color=16773632)
         for team, stats in sorted_teams:
             win_percentage = stats["gw"] / stats["gp"] if stats["gp"] > 0 else 0
             embed.add_field(
