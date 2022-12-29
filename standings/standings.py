@@ -29,7 +29,7 @@ class Standings(commands.Cog):
     async def standings(self, ctx):
         teams = await self.config.guild(ctx.guild).teams()
         sorted_teams = sorted(
-            teams, key=lambda x: (-x[1]["gw"], x[1]["gp"]), reverse=True
+            teams.items(), key=lambda x: (-x[1]["gw"], x[1]["gp"]), reverse=True
         )
         embed = discord.Embed(title="League Standings", color=discord.Color.blue())
         for team, stats in sorted_teams:
