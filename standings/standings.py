@@ -43,13 +43,21 @@ class Standings(commands.Cog):
     
     @commands.command(name="updatestandings")
     @commands.has_permissions(manage_guild=True)
-    async def update_standings(self, ctx, gw: int, gl: int, *, team: str):
+    async def update_standings(self, ctx, result: str, *, team: str):
         teams = await self.config.guild(ctx.guild).teams()
         if team not in teams:
             return await ctx.send("Invalid team name.")
-        gp = gw + gl
-        teams[team]["gp"] = gp
-        teams[team]["gw"] = gw
-        teams[team]["gl"] = gl
+
+        if result.lower() == "win":
+            teams[team]["gw"] += 1
+        elif result.lower() == "loss":
+            teams[team]["gl"] += 1
+        else:
+            return await ctx.send("Invalid result. Must be 'win' or 'loss'.")
+
+        teams[team]["gp"] += 1
+        win_percentage = teams[team]["gw"] / teams[team]["gp"] if teams[team]["gp"] > 0 else 0
+        teams[team]["wp"] = win_percentage
+
         await self.config.guild(ctx.guild).teams.set(teams)
         await ctx.send("Standings updated successfully.")
