@@ -27,7 +27,7 @@ class Standings(commands.Cog):
     
     @commands.command(name="standings")
     async def standings(self, ctx):
-        teams = self.config.guild(ctx.guild).teams()
+        teams = await self.config.guild(ctx.guild).teams()
         sorted_teams = sorted(
             teams, key=lambda x: (-x[1]["gw"], x[1]["gp"]), reverse=True
         )
