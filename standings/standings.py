@@ -27,7 +27,7 @@ class Standings(commands.Cog):
     
     @commands.command(name="standings")
     async def standings(self, ctx):
-        teams = self.config.guild(ctx.guild).teams.get()
+        teams = self.config.guild(ctx.guild).teams()
         embed = discord.Embed(title="League Standings", color=discord.Color.blue())
         for team, stats in teams:
             win_percentage = stats["gw"] / stats["gp"] if stats["gp"] > 0 else 0
@@ -40,7 +40,7 @@ class Standings(commands.Cog):
     @commands.command(name="updatestandings")
     @commands.has_permissions(manage_guild=True)
     async def update_standings(self, ctx, team: str, gp: int, gw: int, gl: int):
-        teams = self.config.guild(ctx.guild).teams().get()
+        teams = self.config.guild(ctx.guild).teams()
         if team not in teams:
             return await ctx.send("Invalid team name.")
         teams[team]["gp"] = gp
