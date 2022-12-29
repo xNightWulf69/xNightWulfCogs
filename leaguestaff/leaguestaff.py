@@ -17,8 +17,9 @@ class LeagueStaff(commands.Cog):
             await ctx.send("There are no members with that role.")
             return
 
-        embed = discord.Embed(title="The Swarm Staff", color=16772096, thumbnail_url="https://cdn.discordapp.com/attachments/1058010972138254348/1058012219390046288/IMG_0038.png")
+        embed = discord.Embed(title="The Swarm Staff", color=16772096)
+        embed.set_thumbnail(url='https://cdn.discordapp.com/attachments/1058010972138254348/1058012219390046288/IMG_0038.png')
         for member in members:
             embed.add_field(name="<:swarm:1035174263147208805> Staff Member", value=member.mention, inline=True)
-        embed.set_footer(text=f"<:swarm:1035174263147208805> Total staff members: {len(members)}")
+        embed.set_footer(text=f"Total staff members: {len(members)}")
         await ctx.send(embed=embed)
