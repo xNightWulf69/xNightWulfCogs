@@ -38,7 +38,7 @@ class Standings(commands.Cog):
                 name=team,
                 value=f"GP: {stats['gp']} | GW: {stats['gw']} | GL: {stats['gl']} | WP: {win_percentage:.2f}",
             )
-       await ctx.send(embed=embed)
+        await ctx.send(embed=embed)
     
     @commands.command(name="updatestandings")
     @commands.has_permissions(manage_guild=True)
