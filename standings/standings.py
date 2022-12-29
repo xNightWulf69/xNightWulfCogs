@@ -36,6 +36,8 @@ class Standings(commands.Cog):
         int_number = int(timestamp)
         unix = "<t:{}:D>".format(int_number)
         embed = discord.Embed(title="League Standings", description=unix, color=16773632)
+        embed.set_thumbnail(url='https://cdn.discordapp.com/attachments/1058010972138254348/1058012219390046288/IMG_0038.png')
+        embed.set_footer(text="The Swarm", icon_url="https://cdn.discordapp.com/attachments/1058010972138254348/1058012219390046288/IMG_0038.png")
         for team, stats in sorted_teams:
             win_percentage = stats["gw"] / stats["gp"] if stats["gp"] > 0 else 0
             embed.add_field(
