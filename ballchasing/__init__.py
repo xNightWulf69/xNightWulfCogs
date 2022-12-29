@@ -1,4 +1,4 @@
-from .ballchasing import BallChasing
+from .ballchasing import Ballchasing
 
 def setup(bot):
-    bot.add_cog(BallChasing(bot))
+    bot.add_cog(Ballchasing(bot))
