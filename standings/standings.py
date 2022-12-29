@@ -36,14 +36,14 @@ class Standings(commands.Cog):
             win_percentage = stats["gw"] / stats["gp"] if stats["gp"] > 0 else 0
             embed.add_field(
                 name=team,
-                value=f"GP: {stats['gp']} | GW: {stats['gw']} | GL: {stats['gl']} | WP: {win_percentage:.2f}",
+                value=f"GamesPlayed: {stats['gp']} | GamesWon: {stats['gw']} | GamesLost: {stats['gl']} | WinPercentage: {win_percentage:.2f}",
                 inline=False,
             )
         await ctx.send(embed=embed)
     
     @commands.command(name="updatestandings")
     @commands.has_permissions(manage_guild=True)
-    async def update_standings(self, ctx, team: str, gw: int, gl: int):
+    async def update_standings(self, ctx, gw: int, gl: int, *, team: str):
         teams = await self.config.guild(ctx.guild).teams()
         if team not in teams:
             return await ctx.send("Invalid team name.")
