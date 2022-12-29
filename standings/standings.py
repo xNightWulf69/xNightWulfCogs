@@ -25,25 +25,25 @@ class Standings(commands.Cog):
         }
         self.config.register_guild(**default_guild)
     
-@commands.command(name="standings")
-async def standings(self, ctx):
-    teams = self.config.guild(ctx.guild).teams.get()
+    @commands.command(name="standings")
+    async def standings(self, ctx):
+        teams = self.config.guild(ctx.guild).teams.get()
 
-    def sort_key(team):
-        stats = teams[team]
-        return (-stats["gw"], stats["gp"], -stats["gl"])
+        def sort_key(team):
+            stats = teams[team]
+            return (-stats["gw"], stats["gp"], -stats["gl"])
 
-    sorted_teams = sorted(teams, key=sort_key)
+        sorted_teams = sorted(teams, key=sort_key)
 
-    embed = discord.Embed(title="League Standings", color=discord.Color.blue())
-    for team in sorted_teams:
-        stats = teams[team]
-        win_percentage = stats["gw"] / stats["gp"] if stats["gp"] > 0 else 0
-        embed.add_field(
-            name=team,
-            value=f"GP: {stats['gp']} | GW: {stats['gw']} | GL: {stats['gl']} | WP: {win_percentage:.2f}",
-        )
-    await ctx.send(embed=embed)
+        embed = discord.Embed(title="League Standings", color=discord.Color.blue())
+        for team in sorted_teams:
+            stats = teams[team]
+            win_percentage = stats["gw"] / stats["gp"] if stats["gp"] > 0 else 0
+            embed.add_field(
+                name=team,
+                value=f"GP: {stats['gp']} | GW: {stats['gw']} | GL: {stats['gl']} | WP: {win_percentage:.2f}",
+            )
+        await ctx.send(embed=embed)
     
     @commands.command(name="updatestandings")
     @commands.has_permissions(manage_guild=True)
