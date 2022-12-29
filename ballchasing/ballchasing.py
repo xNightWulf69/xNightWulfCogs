@@ -8,7 +8,8 @@ class Ballchasing(commands.Cog):
     @commands.command()
     async def ballchasinglink(self, ctx, *, player_name: str=None):
         # Replace spaces in the player name with %20
-        player_name = player_name.replace(" ", "%20")
+        if player_name:
+            player_name = player_name.replace(" ", "%20")
     
         # If the player name is not specified, send a message asking for a player name
         if not player_name:
