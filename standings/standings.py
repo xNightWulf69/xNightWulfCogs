@@ -27,7 +27,7 @@ class Standings(commands.Cog):
     
     @commands.command(name="standings")
     async def standings(self, ctx):
-        teams = self.config.guild(ctx.guild).teams()
+        teams = self.config.guild(ctx.guild).teams().get()
         sorted_teams = sorted(
             teams.items(), key=lambda x: (-x[1]["gw"], x[1]["gp"]), reverse=True
         )
@@ -43,7 +43,7 @@ class Standings(commands.Cog):
     @commands.command(name="updatestandings")
     @commands.has_permissions(manage_guild=True)
     async def update_standings(self, ctx, team: str, gp: int, gw: int, gl: int):
-        teams = self.config.guild(ctx.guild).teams()
+        teams = self.config.guild(ctx.guild).teams().get()
         if team not in teams:
             return await ctx.send("Invalid team name.")
         teams[team]["gp"] = gp
