@@ -29,7 +29,7 @@ class Standings(commands.Cog):
     async def standings(self, ctx):
         teams = await self.config.guild(ctx.guild).teams()
         sorted_teams = sorted(
-            teams.items(), key=lambda x: (-x[1]["gw"], x[1]["gp"]), reverse=True
+            teams.items(), key=lambda x: (-x[1]["gw"], x[1]["gp"]), reverse=False
         )
         embed = discord.Embed(title="League Standings", color=discord.Color.blue())
         for team, stats in sorted_teams:
@@ -43,10 +43,11 @@ class Standings(commands.Cog):
     
     @commands.command(name="updatestandings")
     @commands.has_permissions(manage_guild=True)
-    async def update_standings(self, ctx, team: str, gp: int, gw: int, gl: int):
+    async def update_standings(self, ctx, team: str, gw: int, gl: int):
         teams = await self.config.guild(ctx.guild).teams()
         if team not in teams:
             return await ctx.send("Invalid team name.")
+        gp = gw + gl
         teams[team]["gp"] = gp
         teams[team]["gw"] = gw
         teams[team]["gl"] = gl
