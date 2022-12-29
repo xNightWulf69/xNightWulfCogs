@@ -21,5 +21,5 @@ class LeagueStaff(commands.Cog):
         embed.set_thumbnail(url='https://cdn.discordapp.com/attachments/1058010972138254348/1058012219390046288/IMG_0038.png')
         for member in members:
             embed.add_field(name="<:swarm:1035174263147208805> Staff Member", value=member.mention, inline=True)
-        embed.set_footer(text=f"Total staff members: {len(members)}")
+        embed.set_footer(text=f"Total staff members: {len(members)}", icon_url='https://cdn.discordapp.com/attachments/1058010972138254348/1058012219390046288/IMG_0038.png')
         await ctx.send(embed=embed)
