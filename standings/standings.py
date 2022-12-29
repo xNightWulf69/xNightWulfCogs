@@ -37,13 +37,14 @@ class Standings(commands.Cog):
             embed.add_field(
                 name=team,
                 value=f"GP: {stats['gp']} | GW: {stats['gw']} | GL: {stats['gl']} | WP: {win_percentage:.2f}",
+                inline=False,
             )
         await ctx.send(embed=embed)
     
     @commands.command(name="updatestandings")
     @commands.has_permissions(manage_guild=True)
     async def update_standings(self, ctx, team: str, gp: int, gw: int, gl: int):
-        teams = self.config.guild(ctx.guild).teams()
+        teams = await self.config.guild(ctx.guild).teams()
         if team not in teams:
             return await ctx.send("Invalid team name.")
         teams[team]["gp"] = gp
