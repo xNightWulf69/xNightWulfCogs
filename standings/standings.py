@@ -42,7 +42,7 @@ class Standings(commands.Cog):
             win_percentage = stats["gw"] / stats["gp"] if stats["gp"] > 0 else 0
             embed.add_field(
                 name=team,
-                value=f"GamesPlayed: {stats['gp']} | 🏆: {stats['gw']} | 🔻: {stats['gl']} | **％**: {win_percentage:.2f}",
+                value=f"GamesPlayed: {stats['gp']}       🏆: {stats['gw']}      🔻: {stats['gl']}      **％**: {win_percentage:.2f}",
                 inline=False,
             )
         await ctx.send(embed=embed)
