@@ -29,7 +29,7 @@ class Standings(commands.Cog):
     async def standings(self, ctx):
         teams = self.config.guild(ctx.guild).teams.get()
         embed = discord.Embed(title="League Standings", color=discord.Color.blue())
-        for team, stats in teams.items():
+        for team, stats in teams:
             win_percentage = stats["gw"] / stats["gp"] if stats["gp"] > 0 else 0
             embed.add_field(
                 name=team,
