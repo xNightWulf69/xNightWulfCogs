@@ -6,7 +6,7 @@ class Ballchasing(commands.Cog):
         self.bot = bot
 
     @commands.command()
-    async def ballchasinglink(self, ctx, *, player_name: str):
+    async def ballchasinglink(self, ctx, *, player_name: str=None):
         # Replace spaces in the player name with %20
         player_name = player_name.replace(" ", "%20")
     
