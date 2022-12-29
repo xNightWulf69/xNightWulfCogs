@@ -40,7 +40,7 @@ class Standings(commands.Cog):
         embed.set_footer(text="The Swarm", icon_url="https://cdn.discordapp.com/attachments/1058010972138254348/1058012219390046288/IMG_0038.png")
         for team, stats in sorted_teams:
             win_percentage = stats["gw"] / stats["gp"] if stats["gp"] > 0 else 0
-            invisible_space = "\u200B\u200B\u200B\u200B"
+            invisible_space = "             "
             embed.add_field(
                 name=team,
                 value=f"GamesPlayed: {stats['gp']} {invisible_space}| 🏆: {stats['gw']} {invisible_space}| 🔻: {stats['gl']} {invisible_space}| **％**: {win_percentage:.2f}",
