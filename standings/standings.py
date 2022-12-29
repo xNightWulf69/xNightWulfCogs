@@ -27,17 +27,12 @@ class Standings(commands.Cog):
     
     @commands.command(name="standings")
     async def standings(self, ctx):
-        teams = self.config.guild(ctx.guild).teams.get()
-
-        def sort_key(team):
-            stats = teams[team]
-            return (-stats["gw"], stats["gp"], -stats["gl"])
-
-        sorted_teams = sorted(teams, key=sort_key)
-
+        teams = self.config.guild(ctx.guild).teams()
+        sorted_teams = sorted(
+            teams, key=lambda x: (-x[1]["gw"], x[1]["gp"]), reverse=True
+        )
         embed = discord.Embed(title="League Standings", color=discord.Color.blue())
-        for team in sorted_teams:
-            stats = teams[team]
+        for team, stats in sorted_teams:
             win_percentage = stats["gw"] / stats["gp"] if stats["gp"] > 0 else 0
             embed.add_field(
                 name=team,
