@@ -9,7 +9,7 @@ class Ballchasing(commands.Cog):
     @commands.command()
     async def latestgame(self, ctx, *, player_name: str):
         # Make a request to the Ballchasing API to get the latest game for the specified player
-        url = f"https://www.ballchasing.com/api/v1/player/{player_name}/latest"
+        url = f"https://ballchasing.com/api/v1/player/{player_name}/latest"
         response = requests.get(url)
         if response.status_code != 200:
             return await ctx.send("Failed to retrieve player stats. Please check the player name and try again.")
