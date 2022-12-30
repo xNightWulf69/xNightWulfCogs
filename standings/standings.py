@@ -70,7 +70,7 @@ class Standings(commands.Cog):
 
     @commands.command(name="updatestandingsmega")
     @commands.has_permissions(manage_guild=True)
-    async def update_standingsmega(self, ctx, team: str, gp: int, gw: int, gl: int, wp: int):
+    async def update_standingsmega(self, ctx, gp: int, gw: int, gl: int, wp: int, *, team: str):
         teams = await self.config.guild(ctx.guild).teams()
         if team not in teams:
             return await ctx.send("Invalid team name.")
