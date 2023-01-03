@@ -266,7 +266,7 @@ class TeamModule(commands.Cog):
             for p in team["players"].values():
                 if p["mmr"] < lowest_mmr:
                     lowest_mmr = p["mmr"]
-            if free_agents[player.id]["mmr"] > lowest_mmr:
+            if free_agents[f"{player.id}"]["mmr"] > lowest_mmr:
                 return await ctx.send("The invited player's MMR is not lower than the lowest MMR player on the team.")
         else:
             return await ctx.send("You are not the general manager of a team.")
