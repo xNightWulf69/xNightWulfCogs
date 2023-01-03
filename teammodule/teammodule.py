@@ -1,4 +1,5 @@
 import discord
+import asyncio
 from redbot.core import Config, commands
 
 # Create a new Config instance for storing team information
@@ -73,7 +74,7 @@ class TeamModule(commands.Cog):
         def check(reaction, user):
             return user == player and str(reaction.emoji) in ["🟢", "🔴"]
         try:
-            reaction, user = await self.bot.wait_for("reaction_add", check=check, timeout=60.0)
+            reaction, user = await self.bot.wait_for("reaction_add", check=check, timeout=300.0)
         except asyncio.TimeoutError:
             return await ctx.send("Invitation expired.")
 
