@@ -39,17 +39,25 @@ class TeamModule(commands.Cog):
         # Retrieve the team's general manager and players from the Config
         teams = await team_config.guild(ctx.guild).teams()
         if team_name in teams:
-            embed = discord.Embed(title=f"{team_name}")
             gm = teams[team_name]["GM"]
             gmid = self.bot.get_user(int(gm))
             players = teams[team_name]["players"]
-            embed.add_field(name="General Manager", value=gmid.mention, inline=False)
-            for player in players:
-                playerid = self.bot.get_user(int(player))
-                embed.add_field(name="Player", value=playerid.mention + " " + f'MMR: {teams[team_name]["players"][player]["mmr"] / 100}', inline=False)
+
+            # Create an embed to display the team information
+            embed = discord.Embed(title=f'Team "{team_name}"', color=discord.Color.blue())
+            embed.add_field(name="General Manager", value=gmid.mention, inline=True)
+            embed.add_field(name="Players", value="\n".join([f"{self.bot.get_user(int(p)).mention} ({p['mmr']//100}00 MMR)" for p in players.values()]), inline=True)
+
+            # Calculate the current and remaining MMR in hundreds
+            current_mmr = sum([p["mmr"] for p in players.values()]) // 100
+            remaining_mmr = 46 - current_mmr
+            embed.add_field(name="Current MMR", value=f"{current_mmr}00", inline=True)
+            embed.add_field(name="Remaining MMR", value=f"{remaining_mmr}00", inline=True)
+
             await ctx.send(embed=embed)
         else:
-            return await ctx.send("That team doesn't exist")
+            return await ctx.send("That team doesn's exist")
+
     @commands.command()
     async def gminvite(self, ctx, player: discord.Member, *, team_name: str):
         # Retrieve the list of teams from the Config
