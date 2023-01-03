@@ -7,10 +7,10 @@ class TeamModule(commands.Cog):
 
     @commands.command()
     @commands.has_role(1025216358117544037)
-    async def create_team(self, ctx, general_manager: discord.Member, *, name: commands.Greedy[str]):
+    async def create_team(self, ctx, general_manager: discord.Member, *, name: str):
         """Creates a new team with the given name and assigns a general manager for that team."""
         # Create the team
-        team = Team(name=' '.join(name), general_manager=general_manager)
+        team = Team(name=name, general_manager=general_manager)
         team.save()
 
         # Give the general manager the specified role
