@@ -42,8 +42,7 @@ class TeamModule(commands.Cog):
             embed.add_field(name="General Manager", value=gmid.mention, inline=False)
             for player in players:
                 playerid = self.bot.get_user(int(player))
-                test = int(teams[team_name]["players"][player]["mmr"]) / 100
-                embed.add_field(name="Player", value=playerid.mention + " " + test, inline=False)
+                embed.add_field(name="Player", value=playerid.mention + " " + f'MMR: {teams[team_name]["players"][player]["mmr"] / 100}', inline=False)
                 await ctx.send(embed=embed)
         else:
             return await ctx.send("That team doesn't exist")
