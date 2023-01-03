@@ -140,7 +140,7 @@ class TeamModule(commands.Cog):
     async def team(self, ctx, team_name: str):
         # Retrieve the team's general manager and players from the Config
         teams = await team_config.guild(ctx.guild).teams()
-        if team in teams:
+        if team_name in teams:
             team = teams[team_name]
             await ctx.send(team)
         else:
