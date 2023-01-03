@@ -272,7 +272,7 @@ class TeamModule(commands.Cog):
             return await ctx.send("You are not the general manager of a team.")
 
         # Invite the player as a sub player
-        team["players"][player.id] = {"mmr": free_agents[player.id]["mmr"], "tracker": free_agents[player.id]["tracker"]}
+        team["players"][f"{player.id}"] = {"mmr": free_agents[f"{player.id}"]["mmr"], "tracker": free_agents[player.id]["tracker"]}
         await team_config.guild(ctx.guild).teams.set(teams)
         del free_agents[player.id]
         await free_agents_config.guild(ctx.guild).free_agents.set(free_agents)
