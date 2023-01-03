@@ -114,7 +114,7 @@ class TeamModule(commands.Cog):
             if f"{ctx.author.id}" in team["players"]:
                 return await ctx.send("You are already on a team.")
         free_agents = await free_agents_config.guild(ctx.guild).free_agents()
-        if ctx.author.id in free_agents:
+        if f"{ctx.author.id}" in free_agents:
             return await ctx.send("You are already registered as a Free Agent")
 
         # Add the player to the free agents Config
@@ -151,7 +151,7 @@ class TeamModule(commands.Cog):
         free_agents = await free_agents_config.guild(ctx.guild).free_agents()
 
         # Check if the player is a registered free agent
-        if player.id in free_agents:
+        if f"{player.id}" in free_agents:
             # Update the player's MMR in the free agents Config
             free_agents[player.id]["mmr"] = mmr
             await free_agents_config.guild(ctx.guild).free_agents.set(free_agents)
