@@ -217,8 +217,8 @@ class TeamModule(commands.Cog):
             if ctx.author.id == team["GM"]:
                 # Transfer the GM role and remove the original GM from the team
                 team["GM"] = new_gm.id
-                if new_gm.id in team["players"]:
-                    del team["players"][new_gm.id]
+                if f"{new_gm.id}" in team["players"]:
+                    del team["players"][f"{new_gm.id}"]
                 await team_config.guild(ctx.guild).teams.set(teams)
                 await ctx.send(f'{new_gm.mention} is now the general manager of "{team_name}".')
                 return
