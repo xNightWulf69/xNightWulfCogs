@@ -1,19 +1,21 @@
 import discord
-from redbot.core import commands, Config
+from redbot.core import Config, commands
+
+# Create a new Config instance for storing team information
+team_config = Config.get_conf(None, identifier=1234567890, force_registration=True)
+
+# Define the team Config subgroup
+team_config.register_guild(
+    name='',
+    general_manager=None,
+    players=[]
+)
 
 class TeamModule(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.team_config = team_config
 
-    # Create a new Config instance for storing team information
-    team_config = Config.get_conf(None, identifier=1234567890, force_registration=True)
-
-    # Define the team Config subgroup
-    team_config.register_guild(
-        name='',
-        general_manager=None,
-        players=[]
-    )
     @commands.command()
     @commands.has_role(1025216358117544037)
     async def create_team(self, ctx, general_manager: discord.Member, *, name: str):
