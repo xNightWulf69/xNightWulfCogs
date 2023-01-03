@@ -133,3 +133,29 @@ class TeamModule(commands.Cog):
         # Clear the free agents Config
         await self.free_agents_config.clear_all_guilds()
         await ctx.send("Free agents Config cleared.")
+
+@commands.command()
+@commands.has_role(1028435771528581130)
+@commands.has_role(1025216358117544037)
+async def update_mmr(self, ctx, player: discord.Member, mmr: int):
+    # Retrieve the list of teams and free agents from the Config
+    teams = await team_config.guild(ctx.guild).teams()
+    free_agents = await free_agents_config.guild(ctx.guild).free_agents()
+
+    # Check if the player is a registered free agent
+    if player.id in free_agents:
+        # Update the player's MMR in the free agents Config
+        free_agents[player.id]["mmr"] = mmr
+        await free_agents_config.guild(ctx.guild).free_agents.set(free_agents)
+        await ctx.send(f'{player.mention} has had their MMR updated to {mmr}.')
+        return
+
+    # Check if the player is on a team
+    for team in teams.values():
+        if player.id in team["players"]:
+            # Update the player's MMR in the team
+            team["players"][player.id]["mmr"] = mmr
+            await team_config.guild(ctx.guild).teams.set(teams)
+            await ctx.send(f'{player.mention} has had their MMR updated to {mmr}.')
+            return
+    await ctx.send("That player is not a registered free agent or on a team.")
