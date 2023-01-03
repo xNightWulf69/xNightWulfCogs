@@ -153,7 +153,7 @@ class TeamModule(commands.Cog):
         # Check if the player is a registered free agent
         if f"{player.id}" in free_agents:
             # Update the player's MMR in the free agents Config
-            free_agents[player.id]["mmr"] = mmr
+            free_agents[f"{player.id}"]["mmr"] = mmr
             await free_agents_config.guild(ctx.guild).free_agents.set(free_agents)
             await ctx.send(f'{player.mention} has had their MMR updated to {mmr}.')
             return
