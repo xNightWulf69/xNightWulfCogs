@@ -153,7 +153,7 @@ class TeamModule(commands.Cog):
         for team in teams.values():
             if player.id in team["players"]:
                 # Update the player's MMR in the team
-                    team["players"][player.id]["mmr"] = mmr
+                team["players"][player.id]["mmr"] = mmr
                 await team_config.guild(ctx.guild).teams.set(teams)
                 await ctx.send(f'{player.mention} has had their MMR updated to {mmr}.')
                 return
