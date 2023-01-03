@@ -35,13 +35,15 @@ class TeamModule(commands.Cog):
         # Retrieve the team's general manager and players from the Config
         teams = await team_config.guild(ctx.guild).teams()
         if team_name in teams:
+            embed = discord.Embed(title=f"{team_name}")
             gm = teams[team_name]["GM"]
             gmid = self.bot.get_user(int(gm))
             players = teams[team_name]["players"]
-            await ctx.send("General Manager: " + gmid.mention)
+            embed.add_field(name="General Manager", value=gmid.mention, inline=False)
             for player in players:
                 playerid = self.bot.get_user(int(player))
-                await ctx.send(playerid.mention)
+                embed.add_field(name="Player", value=playerid.mention, inline=False)
+                await ctx.send(embed=embed)
         else:
             return await ctx.send("That team doesn't exist")
     @commands.command()
