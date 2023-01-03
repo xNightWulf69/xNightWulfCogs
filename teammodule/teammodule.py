@@ -25,6 +25,7 @@ class TeamModule(commands.Cog):
             return
         else:
             teams[team_name] = {"GM": general_manager.id, "players": []}
+        await team_config.guild(ctx.guild).teams.set(teams)
         # Give the general manager the role
         role = discord.utils.get(ctx.guild.roles, id=1028690403022606377)
         await general_manager.add_roles(role)
