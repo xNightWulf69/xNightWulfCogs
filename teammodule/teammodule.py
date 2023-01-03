@@ -139,5 +139,5 @@ class TeamModule(commands.Cog):
 
         # Remove the user from the list of free agents
         free_agents = await self.free_agents_config.guild(ctx.guild).free_agents()
-        free_agents.remove(str(user.id))
+        free_agents.pop(str(user.id))
         await self.free_agents_config.guild(ctx.guild).free_agents.set(free_agents)
