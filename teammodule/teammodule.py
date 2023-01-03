@@ -19,7 +19,7 @@ class TeamModule(commands.Cog):
     @commands.has_role(1025216358117544037)
     async def create_team(self, ctx, general_manager: discord.Member, *, team_name: str):
         # Retrieve the list of teams from the Config
-        async with team_config.guild(guild_obj).teams() as teams:
+        async with team_config.guild(ctx.guild).teams() as teams:
                 # Check if the team already exists
             if team_name in teams:
                 await ctx.send(f'A team with the name "{team_name}" already exists.')
