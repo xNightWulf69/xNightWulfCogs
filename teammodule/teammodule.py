@@ -274,7 +274,7 @@ class TeamModule(commands.Cog):
         # Invite the player as a sub player
         team["players"][f"{player.id}"] = {"mmr": free_agents[f"{player.id}"]["mmr"], "tracker": free_agents[f"{player.id}"]["tracker"]}
         await team_config.guild(ctx.guild).teams.set(teams)
-        del free_agents[player.id]
+        del free_agents[f"{player.id}"]
         await free_agents_config.guild(ctx.guild).free_agents.set(free_agents)
 
         await ctx.send(f'{player.mention} has been invited as a sub player to "{t_name}".')
