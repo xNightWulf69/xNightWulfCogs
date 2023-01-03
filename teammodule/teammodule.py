@@ -165,9 +165,9 @@ class TeamModule(commands.Cog):
         teams = await team_config.guild(ctx.guild).teams()
         player_left = False
         for team_name, team in teams.items():
-            if ctx.author.id in team["players"]:
+            if f"{ctx.author.id}" in team["players"]:
                 # Remove the player from the team
-                del team["players"][ctx.author.id]
+                del team["players"][f"{ctx.author.id}"]
                 await team_config.guild(ctx.guild).teams.set(teams)
                 player_left = True
                 break
