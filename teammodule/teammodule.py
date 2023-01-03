@@ -143,8 +143,9 @@ class TeamModule(commands.Cog):
         teams = await team_config.guild(ctx.guild).teams()
         if team_name in teams:
             gm = teams[team_name]["GM"]
+            gmid = self.bot.get_user(int(gm))
             players = teams[team_name]["players"]
-            await ctx.send("General Manager: " + gm)
+            await ctx.send("General Manager: " + gmid.mention)
             await ctx.send("Players: " + players)
         else:
             return await ctx.send("That team doesn's exist")
