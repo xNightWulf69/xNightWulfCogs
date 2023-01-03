@@ -43,7 +43,7 @@ class TeamModule(commands.Cog):
         else:
             return await ctx.send("That team doesn't exist")
     @commands.command()
-    async def invite(self, ctx, player: discord.Member, *, team_name: str):
+    async def gminvite(self, ctx, player: discord.Member, *, team_name: str):
         # Retrieve the list of teams from the Config
         teams = await team_config.guild(ctx.guild).teams()
         if team_name not in teams:
