@@ -73,7 +73,7 @@ class TeamModule(commands.Cog):
 
         # Create an embed with the invitation message and tick and cross reactions
         embed = discord.Embed(
-            title=f'Invitation to join team "{team_name}"',
+            title=f'Invitation to join team **{team_name}**',
             description=f'{player.mention}, you have been invited to join team **{team_name}** by {ctx.author.mention}.\n\n'
                         f'React with 🟢 to accept the invitation or 🔴 to decline.',
             color=discord.Color.green()
@@ -98,6 +98,10 @@ class TeamModule(commands.Cog):
             del free_agents[f"{player.id}"]
             await free_agents_config.guild(ctx.guild).free_agents.set(free_agents)
             # Add the player to the team
+            remrole = discord.utils.get(ctx.guild.roles, name="Free Agent")
+            role = discord.utils.get(ctx.guild.roles, name=team_name)
+            await ctx.author.add_roles(role)
+            await ctx.author.remove_roles(remrole)
             await ctx.send(f'{player.mention} has joined team **{team_name}**.')
         else:
             await ctx.send(f'{player.mention} declined the invitation to join team **{team_name}**.')
@@ -107,7 +111,7 @@ class TeamModule(commands.Cog):
         # Check if the player is already on a team
         teams = await team_config.guild(ctx.guild).teams()
         for team in teams.values():
-            if ctx.author.id in team["players"]:
+            if f"{ctx.author.id}" in team["players"]:
                 return await ctx.send("You are already on a team.")
 
         # Add the player to the free agents Config
@@ -121,6 +125,8 @@ class TeamModule(commands.Cog):
                     description=f'{ctx.author.mention} has registered as a free agent with MMR {mmr} and tracker {tracker}',
                     color=discord.Color.green()
                 )
+        role = discord.utils.get(ctx.guild.roles, name="Free Agent")
+        await ctx.author.add_roles(role)
         await channel.send(embed=embed)
 
     @commands.command()
