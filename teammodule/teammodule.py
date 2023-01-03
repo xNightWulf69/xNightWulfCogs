@@ -70,7 +70,20 @@ class TeamModule(commands.Cog):
         # Check if the player being invited is a registered free agent
         if f"{player.id}" not in free_agents:
             return await ctx.send("That player is not a registered free agent.")
-
+        # Check if the combined MMR of the current players and the invited player is less than 1000
+        team = None
+        for t_name, t in teams.items():
+            if ctx.author.id == t["GM"]:
+                team = t
+                break
+        if team is not None:
+            current_mmr = 0
+            for p_id, p in team["players"].items():
+                current_mmr += p["mmr"]
+            if current_mmr + free_agents[player.id]["mmr"] > 1000:
+                return await ctx.send("The combined MMR of the current players and the invited player is more than 1000.")
+        else:
+            return await ctx.send("You are not the general manager of a team.")
         # Create an embed with the invitation message and tick and cross reactions
         embed = discord.Embed(
             title=f'Invitation to join team **{team_name}**',
