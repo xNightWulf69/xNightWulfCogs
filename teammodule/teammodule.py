@@ -19,13 +19,12 @@ class TeamModule(commands.Cog):
     @commands.has_role(1025216358117544037)
     async def create_team(self, ctx, general_manager: discord.Member, *, team_name: str):
         # Retrieve the list of teams from the Config
-        async with team_config.guild(ctx.guild).teams() as teams:
-                # Check if the team already exists
-            if team_name in teams:
-                await ctx.send(f'A team with the name "{team_name}" already exists.')
-                return
-            teams[teamName] = {"GM": general_manager.id, "players": []}
-
+        teams = await team_config.config.guild(ctx.guild).teams()
+        if team_name in teams:
+            await ctx.send("That team name already exists.")
+            return
+        else:
+            teams[team_name] = {"GM": general_manager.id, "players": []}
         # Give the general manager the role
         role = discord.utils.get(ctx.guild.roles, id=1028690403022606377)
         await general_manager.add_roles(role)
