@@ -80,7 +80,7 @@ class TeamModule(commands.Cog):
             current_mmr = 0
             for p_id, p in team["players"].items():
                 current_mmr += p["mmr"]
-            if current_mmr + free_agents[player.id]["mmr"] > 1000:
+            if current_mmr + free_agents[f"{player.id}"]["mmr"] > 1000:
                 return await ctx.send("The combined MMR of the current players and the invited player is more than 1000.")
         else:
             return await ctx.send("You are not the general manager of a team.")
