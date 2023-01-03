@@ -70,7 +70,7 @@ class TeamModule(commands.Cog):
         # Register the user as a free agent
         await self.free_agents_config.guild(ctx.guild).free_agents.set_raw(str(ctx.author.id), value={'mmr': mmr, 'tracker_link': tracker_link})
 
-        # Send a message in the channel and send the user's name, MMR, and tracker link to the designated channel
-        await ctx.send(f'{ctx.author.mention} has registered as a free agent with MMR {mmr} and tracker link {tracker_link}.')
+        embed = discord.Embed(title=f'{ctx.author.name} has registered as a free agent', description=f'MMR: {mmr}\nTracker: {tracker_link}', color=discord.Color.green())
+        await ctx.send(embed=embed)
         channel = self.bot.get_channel(1059726875527762012)
-        await channel.send(f'{ctx.author.mention} (MMR: {mmr}, Tracker: {tracker_link})')
+        await channel.send(embed=embed)
