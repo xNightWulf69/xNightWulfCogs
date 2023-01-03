@@ -158,3 +158,20 @@ class TeamModule(commands.Cog):
                 await ctx.send(f'{player.mention} has had their MMR updated to {mmr}.')
                 return
         await ctx.send("That player is not a registered free agent or on a team.")
+
+    @commands.command()
+    async def leave_team(self, ctx):
+        # Retrieve the list of teams from the Config
+        teams = await team_config.guild(ctx.guild).teams()
+        player_left = False
+        for team_name, team in teams.items():
+            if ctx.author.id in team["players"]:
+                # Remove the player from the team
+                del team["players"][ctx.author.id]
+                await team_config.guild(ctx.guild).teams.set(teams)
+                player_left = True
+                break
+        if player_left:
+            await ctx.send(f'{ctx.author.mention} has left their team.')
+        else:
+            await ctx.send("You are not on a team.")
