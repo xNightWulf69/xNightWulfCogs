@@ -7,7 +7,7 @@ class TeamModule(commands.Cog):
 
     @commands.command()
     @commands.has_role(1025216358117544037)
-    async def create_team(self, ctx, general_manager: discord.Member, *, name: str):
+    async def createteam(self, ctx, general_manager: discord.Member, *, name: str):
         """Creates a new team with the given name and assigns a general manager for that team."""
         # Create the team
         team = Team(name=name, general_manager=general_manager)
@@ -110,3 +110,9 @@ class TeamModule(commands.Cog):
             embed.add_field(name=player.name, value=f'MMR: {player.free_agent.mmr / 100}')
 
         await ctx.send(embed=embed)
+
+class Team:
+    def __init__(self, name, general_manager, players=[]):
+        self.name = name
+        self.general_manager = general_manager
+        self.players = players
