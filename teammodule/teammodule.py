@@ -95,7 +95,7 @@ class TeamModule(commands.Cog):
             # Remove the player from the free agents Config
             team["players"][player.id] = {"mmr": free_agents[f"{player.id}"]["mmr"]}
             await team_config.guild(ctx.guild).teams.set(teams)
-            del free_agents[player.id]
+            del free_agents[f"{player.id}"]
             await free_agents_config.guild(ctx.guild).free_agents.set(free_agents)
             # Add the player to the team
             await ctx.send(f'{player.mention} has joined team **{team_name}**.')
