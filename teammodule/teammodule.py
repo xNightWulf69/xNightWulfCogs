@@ -98,10 +98,13 @@ class TeamModule(commands.Cog):
             del free_agents[f"{player.id}"]
             await free_agents_config.guild(ctx.guild).free_agents.set(free_agents)
             # Add the player to the team
-            remrole = discord.utils.get(ctx.guild.roles, name="Free Agent")
-            role = discord.utils.get(ctx.guild.roles, name=team_name)
-            await ctx.author.add_roles(role)
-            await ctx.author.remove_roles(remrole)
+            try:
+                remrole = discord.utils.get(ctx.guild.roles, name="Free Agent")
+                role = discord.utils.get(ctx.guild.roles, name=team_name)
+                await ctx.author.add_roles(role)
+                await ctx.author.remove_roles(remrole)
+            except:
+                await ctx.send("A role with that name doesn't exist (This is porbably because the team role isn't made)")
             await ctx.send(f'{player.mention} has joined team **{team_name}**.')
         else:
             await ctx.send(f'{player.mention} declined the invitation to join team **{team_name}**.')
