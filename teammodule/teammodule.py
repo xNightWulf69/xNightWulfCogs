@@ -70,7 +70,29 @@ class TeamModule(commands.Cog):
         # Register the user as a free agent
         await self.free_agents_config.guild(ctx.guild).free_agents.set_raw(str(ctx.author.id), value={'mmr': mmr, 'tracker_link': tracker_link})
 
-        embed = discord.Embed(title=f'{ctx.author.name} has registered as a free agent', description=f'MMR: {mmr}\nTracker: {tracker_link}', color=discord.Color.green())
+        embed = discord.Embed(title=f'{ctx.author.mention} has registered as a free agent', description=f'MMR: {mmr}\nTracker: {tracker_link}', color=discord.Color.green())
         await ctx.send(embed=embed)
         channel = self.bot.get_channel(1059726875527762012)
         await channel.send(embed=embed)
+
+    @commands.command()
+    async def show_free_agents(self, ctx):
+        """Displays a list of all free agents and their MMR in the current guild."""
+            # Retrieve the dictionary of free agents from the Config
+        free_agents = await self.free_agents_config.guild(ctx.guild).free_agents.all()
+
+        # Create a list of free agents and their MMR
+        free_agent_list = []
+        for user_id, data in free_agents.items():
+            user = self.bot.get_user(int(user_id))
+            if user:
+                free_agent_list.append(f'{user.mention} (MMR: {data["mmr"]})')
+            else:
+                free_agent_list.append(f'User ID {user_id} (MMR: {data["mmr"]})')
+
+        # Send the list of free agents in an embed
+        if free_agent_list:
+            embed = discord.Embed(title='Free Agents', description='\n'.join(free_agent_list), color=discord.Color.green())
+            await ctx.send(embed=embed)
+        else:
+            await ctx.send('There are no free agents in this guild.')
