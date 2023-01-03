@@ -177,7 +177,7 @@ class TeamModule(commands.Cog):
             await ctx.send("You are not on a team.")
 
     @commands.command()
-    async def kick(self, ctx, player: discord.Member):
+    async def gmkick(self, ctx, player: discord.Member):
         # Retrieve the list of teams from the Config
         teams = await team_config.guild(ctx.guild).teams()
         player_kicked = False
