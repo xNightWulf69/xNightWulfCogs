@@ -29,7 +29,8 @@ class TeamModule(commands.Cog):
         await team_config.guild(ctx.guild).name.set(name)
         await team_config.guild(ctx.guild).general_manager.set(general_manager.id)
         await team_config.guild(ctx.guild).players.set([])
-
+        role = discord.utils.get(general_manager.guild.roles, id=1028690403022606377)
+        await general_manager.add_roles(role)
         await ctx.send(f'{ctx.author.mention} has created the team "{name}" and has set {general_manager.mention} as the general manager.')
 
     @commands.command()
