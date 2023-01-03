@@ -7,11 +7,15 @@ team_config = Config.get_conf(None, identifier=1234567890, force_registration=Tr
 team_config.register_guild(
     teams={}
 )
-
+free_agents_config = Config.get_conf(None, identifier=9876543210, force_registration=True)
+free_agents_config.register_guild(
+    free_agents={}
+)
 class TeamModule(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.team_config = team_config
+        self.free_agents_config = free_agents_config
 
     @commands.command()
     @commands.has_role(1025216358117544037)
@@ -88,3 +92,19 @@ class TeamModule(commands.Cog):
             await ctx.send(f'{player.mention} has joined team **{team_name}**.')
         else:
             await ctx.send(f'{player.mention} declined the invitation to join team **{team_name}**.')
+
+    @commands.command()
+    async def register(self, ctx, mmr: int, tracker: str):
+        # Check if the player is already on a team
+        teams = await team_config.guild(ctx.guild).teams()
+        for team in teams.values():
+            if ctx.author.id in team["players"]:
+                return await ctx.send("You are already on a team.")
+
+        # Add the player to the free agents Config
+        free_agents = await free_agents_config.guild(ctx.guild).free_agents()
+        free_agents[ctx.author.id] = {"mmr": mmr, "tracker": tracker}
+        await free_agents_config.guild(ctx.guild).free_agents.set(free_agents)
+        await ctx.send(f'{ctx.author.mention} has been registered as a free agent with MMR {mmr} and tracker "{tracker}".')
+        channel = self.bot.get_channel(1059726875527762012)
+        await channel.send(f'{ctx.author.mention} has been registered as a free agent with MMR {mmr} and tracker "{tracker}".')
