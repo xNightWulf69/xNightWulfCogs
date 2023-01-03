@@ -27,11 +27,10 @@ class TeamModule(commands.Cog):
             return
 
         # Create a new entry in the Config for the team
-        teams[team_name] = {
+        await self.team_config.guild(ctx.guild).teams.set_raw(team_name, value={
             'general_manager': general_manager.id,
             'players': []
-        }
-        await self.team_config.guild(ctx.guild).teams.set(teams)
+        })
 
         # Give the general manager the role
         role = discord.utils.get(ctx.guild.roles, id=1028690403022606377)
