@@ -24,7 +24,7 @@ class TeamModule(commands.Cog):
             await ctx.send("That team name already exists.")
             return
         else:
-            teams[team_name] = {"GM": general_manager.id, "players": []}
+            teams[team_name] = {"GM": general_manager.id, "players": {}}
         await team_config.guild(ctx.guild).teams.set(teams)
         # Give the general manager the role
         role = discord.utils.get(ctx.guild.roles, id=1028690403022606377)
@@ -146,7 +146,7 @@ class TeamModule(commands.Cog):
             gmid = self.bot.get_user(int(gm))
             players = teams[team_name]["players"]
             await ctx.send("General Manager: " + gmid.mention)
-            for i in players:
-                await ctx.send("Players: " + i)
+            for player, mmr in players:
+                await ctx.send("Players: " + player)
         else:
             return await ctx.send("That team doesn's exist")
