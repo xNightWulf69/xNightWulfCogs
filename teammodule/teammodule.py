@@ -108,7 +108,7 @@ class TeamModule(commands.Cog):
         await ctx.send(f'{ctx.author.mention} has been registered as a free agent with MMR {mmr} and tracker {tracker}.')
         channel = self.bot.get_channel(1059726875527762012)
         embed = discord.Embed(
-                    title=f'{ctx.author.mention} has registered!',
+                    title=f'{ctx.author.display_name} has registered!',
                     description=f'{ctx.author.mention} has registered as a free agent with MMR {mmr} and tracker {tracker}',
                     color=discord.Color.green()
                 )
