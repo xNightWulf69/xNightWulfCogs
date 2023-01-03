@@ -100,7 +100,7 @@ class TeamModule(commands.Cog):
             # Add the player to the team
             try:
                 remrole = discord.utils.get(ctx.guild.roles, name="Free Agent")
-                await ctx.author.remove_roles(remrole)
+                await player.remove_roles(remrole)
             except:
                 await ctx.send("Can't remove the Free Agent role... (You probably didn't have it for some reason)")
             try:
