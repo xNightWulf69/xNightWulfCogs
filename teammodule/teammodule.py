@@ -68,7 +68,8 @@ class TeamModule(commands.Cog):
             return await ctx.send("Only the general manager can invite players to the team.")
 
         # Check if the player being invited is a registered free agent
-        if player.id not in free_agents:
+        freeagent = 
+        if f"{player.id}" not in free_agents:
             return await ctx.send("That player is not a registered free agent.")
 
         # Create an embed with the invitation message and tick and cross reactions
