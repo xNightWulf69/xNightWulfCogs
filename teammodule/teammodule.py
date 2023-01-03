@@ -105,6 +105,11 @@ class TeamModule(commands.Cog):
         free_agents = await free_agents_config.guild(ctx.guild).free_agents()
         free_agents[ctx.author.id] = {"mmr": mmr, "tracker": tracker}
         await free_agents_config.guild(ctx.guild).free_agents.set(free_agents)
-        await ctx.send(f'{ctx.author.mention} has been registered as a free agent with MMR {mmr} and tracker "{tracker}".')
+        await ctx.send(f'{ctx.author.mention} has been registered as a free agent with MMR {mmr} and tracker {tracker}.')
         channel = self.bot.get_channel(1059726875527762012)
-        await channel.send(f'{ctx.author.mention} has been registered as a free agent with MMR {mmr} and tracker "{tracker}".')
+        embed = discord.Embed(
+                    title=f'{ctx.author.mention} has registered!',
+                    description=f'{ctx.author.mention} has registered as a free agent with MMR {mmr} and tracker {tracker}',
+                    color=discord.Color.green()
+                )
+        await channel.send(embed=embed)
