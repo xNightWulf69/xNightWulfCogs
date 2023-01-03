@@ -113,6 +113,9 @@ class TeamModule(commands.Cog):
         for team in teams.values():
             if f"{ctx.author.id}" in team["players"]:
                 return await ctx.send("You are already on a team.")
+        free_agents = await free_agents_config.guild(ctx.guild).free_agents()
+        if ctx.author.id in free_agents:
+            return await ctx.send("You are already registered as a Free Agent")
 
         # Add the player to the free agents Config
         free_agents = await free_agents_config.guild(ctx.guild).free_agents()
