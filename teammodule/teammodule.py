@@ -141,3 +141,22 @@ class TeamModule(commands.Cog):
         free_agents = await self.free_agents_config.guild(ctx.guild).free_agents()
         free_agents.pop(str(user.id))
         await self.free_agents_config.guild(ctx.guild).free_agents.set(free_agents)
+
+    @commands.command()
+    async def team(self, ctx, team_name: str):
+        # Retrieve the team's general manager and players from the Config
+        general_manager = await self.team_config.guild(ctx.guild).general_manager()
+        players = await self.team_config.guild(ctx.guild).players()
+
+        # Create the embed
+        embed = discord.Embed(title=f'Team {team_name}', description='General Manager:')
+        embed.add_field(name='\u200b', value=f'{general_manager}\n\u200b')
+
+        # Add the players and their MMR to the embed
+        embed.add_field(name='Players', value='\u200b', inline=False)
+        for player in players:
+            mmr = await self.team_config.guild(ctx.guild).player(player).mmr()
+            embed.add_field(name='\u200b', value=f'{player} - {mmr / 100}\n\u200b', inline=False)
+
+        # Send the embed
+        await ctx.send(embed=embed)
