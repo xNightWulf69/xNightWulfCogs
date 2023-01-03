@@ -93,7 +93,7 @@ class TeamModule(commands.Cog):
         # Add the player to the team if they reacted with the tick emoji, or send a message if they declined
         if str(reaction.emoji) == "🟢":
             # Remove the player from the free agents Config
-            team["players"][player.id] = {"mmr": free_agents[player.id]["mmr"]}
+            team["players"][player.id] = {"mmr": free_agents[f"{player.id}"]["mmr"]}
             await team_config.guild(ctx.guild).teams.set(teams)
             del free_agents[player.id]
             await free_agents_config.guild(ctx.guild).free_agents.set(free_agents)
