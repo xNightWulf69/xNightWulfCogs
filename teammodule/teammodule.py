@@ -96,3 +96,48 @@ class TeamModule(commands.Cog):
             await ctx.send(embed=embed)
         else:
             await ctx.send('There are no free agents in this guild.')
+
+    @commands.command()
+    async def invite(self, ctx, user: discord.User):
+        # Retrieve the team's general manager and players from the Config
+        general_manager = await self.team_config.guild(ctx.guild).general_manager()
+        players = await self.team_config.guild(ctx.guild).players()
+
+        # Check if the inviter is the general manager of the team
+        if ctx.author.id != general_manager:
+            await ctx.send(f'{ctx.author.mention} is not the general manager of the team.')
+            return
+
+        # Check if the user is already on a team
+        if user.id in players:
+            await ctx.send(f'{user.mention} is already on a team.')
+            return
+
+        # Check if the user is a free agent
+        if str(user.id) not in await self.free_agents_config.guild(ctx.guild).free_agents():
+            await ctx.send(f'{user.mention} is not a free agent.')
+            return
+
+        # Send an invite message to the user with reactions
+        message = await ctx.send(f'{user.mention}, {ctx.author.mention} has invited you to join their team. React with \N{WHITE HEAVY CHECK MARK} to accept or \N{CROSS MARK} to decline.')
+        await message.add_reaction('\N{WHITE HEAVY CHECK MARK}')
+        await message.add_reaction('\N{CROSS MARK}')
+
+        # Wait for the user's response
+        def check(reaction, react_user):
+            return react_user == user and str(reaction.emoji) in ('\N{WHITE HEAVY CHECK MARK}', '\N{CROSS MARK}')
+
+        reaction, react_user = await self.bot.wait_for('reaction_add', check=check)
+
+        # Add the user to the team if they accepted the invite
+        if str(reaction.emoji) == '\N{WHITE HEAVY CHECK MARK}':
+            players.append(user.id)
+            await self.team_config.guild(ctx.guild).players.set(players)
+            await ctx.send(f'{user.mention} has joined the team.')
+        else:
+            await ctx.send(f'{user.mention} has declined the invitation.')
+
+        # Remove the user from the list of free agents
+        free_agents = await self.free_agents_config.guild(ctx.guild).free_agents()
+        free_agents.remove(str(user.id))
+        await self.free_agents_config.guild(ctx.guild).free_agents.set(free_agents)
