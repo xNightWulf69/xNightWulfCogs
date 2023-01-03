@@ -146,9 +146,9 @@ class TeamModule(commands.Cog):
     @commands.command()
     async def team(self, ctx, team_name: str):
         # Retrieve the team's general manager and players from the Config
-        general_manager_id = await self.team_config.guild(ctx.guild).teams.(team_name).general_manager()
+        general_manager_id = await self.team_config.guild(ctx.guild).teams.team_name.general_manager()
         general_manager = ctx.guild.get_member(general_manager_id)
-        players = await self.team_config.guild(ctx.guild).teams.(team_name).players()
+        players = await self.team_config.guild(ctx.guild).teams.team_name.players()
 
         # Create the embed
         embed = discord.Embed(title=f'Team {team_name}', description='General Manager:')
