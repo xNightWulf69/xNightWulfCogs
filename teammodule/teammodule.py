@@ -65,7 +65,7 @@ class TeamModule(commands.Cog):
         # Create an embed with the invitation message and tick and cross reactions
         embed = discord.Embed(
             title=f'Invitation to join team "{team_name}"',
-            description=f'{player.mention}, you have been invited to join team "{team_name}" by {ctx.author.mention}.\n\n'
+            description=f'{player.mention}, you have been invited to join team **{team_name}** by {ctx.author.mention}.\n\n'
                         f'React with 🟢 to accept the invitation or 🔴 to decline.',
             color=discord.Color.green()
         )
@@ -85,6 +85,6 @@ class TeamModule(commands.Cog):
         if str(reaction.emoji) == "🟢":
             team["players"][player.id] = {"mmr": 0}
             await team_config.guild(ctx.guild).teams.set(teams)
-            await ctx.send(f'{player.mention} has joined team "{team_name}".')
+            await ctx.send(f'{player.mention} has joined team **{team_name}**.')
         else:
-            await ctx.send(f'{player.mention} declined the invitation to join team "{team_name}".')
+            await ctx.send(f'{player.mention} declined the invitation to join team **{team_name}**.')
