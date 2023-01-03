@@ -208,3 +208,18 @@ class TeamModule(commands.Cog):
             await ctx.send(f'{player.mention} has been kicked from their team.')
         else:
             await ctx.send("You are not the general manager of a team or the player is not on a team.")
+
+    @commands.command()
+    async def transfer_gm(self, ctx, new_gm: discord.Member):
+        # Retrieve the list of teams from the Config
+        teams = await team_config.guild(ctx.guild).teams()
+        for team_name, team in teams.items():
+            if ctx.author.id == team["GM"]:
+                # Transfer the GM role and remove the original GM from the team
+                team["GM"] = new_gm.id
+                if new_gm.id in team["players"]:
+                    del team["players"][new_gm.id]
+                await team_config.guild(ctx.guild).teams.set(teams)
+                await ctx.send(f'{new_gm.mention} is now the general manager of "{team_name}".')
+                return
+        await ctx.send("You are not the general manager of a team.")
