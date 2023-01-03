@@ -31,7 +31,7 @@ class TeamModule(commands.Cog):
         await ctx.send(f'Team "{team_name}" has been created with {general_manager.mention} as the general manager.')
 
     @commands.command()
-    async def team(self, ctx, team_name: str):
+    async def team(self, ctx, *, team_name: str):
         # Retrieve the team's general manager and players from the Config
         teams = await team_config.guild(ctx.guild).teams()
         if team_name in teams:
@@ -43,7 +43,7 @@ class TeamModule(commands.Cog):
             for player in players:
                 playerid = self.bot.get_user(int(player))
                 embed.add_field(name="Player", value=playerid.mention + " " + f'MMR: {teams[team_name]["players"][player]["mmr"] / 100}', inline=False)
-                await ctx.send(embed=embed)
+            await ctx.send(embed=embed)
         else:
             return await ctx.send("That team doesn't exist")
     @commands.command()
