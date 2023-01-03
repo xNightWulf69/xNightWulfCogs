@@ -143,4 +143,5 @@ class TeamModule(commands.Cog):
         if team in teams:
             team = teams[team_name]
             await ctx.send(team)
-        else return await ctx.send("That team doesn's exist")
+        else:
+            return await ctx.send("That team doesn's exist")
