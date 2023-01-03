@@ -139,15 +139,8 @@ class TeamModule(commands.Cog):
     @commands.command()
     async def team(self, ctx, team_name: str):
         # Retrieve the team's general manager and players from the Config
-        general_manager_id = await self.team_config.guild(ctx.guild).teams.team_name.general_manager()
-        general_manager = ctx.guild.get_member(general_manager_id)
-        players = await self.team_config.guild(ctx.guild).teams.team_name.players()
-
-        # Create the embed
-        embed = discord.Embed(title=f'Team {team_name}', description='General Manager:')
-        embed.add_field(name='\u200b', value=f'{general_manager}\n\u200b')
-
-        # Add the players and their MMR to the embed
-        embed.add_field(name='Players', value='\n'.join([f'{player} ({player.mmr / 100})' for player in players]))
-
-        await ctx.send(embed=embed)
+        teams = await team_config.guild(ctx.guild).teams()
+        if team in teams:
+            team = teams[team_name]
+            await ctx.send(team)
+        else return await ctx.send("That team doesn's exist")
