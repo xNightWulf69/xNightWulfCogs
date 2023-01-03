@@ -143,7 +143,7 @@ class TeamModule(commands.Cog):
         teams = await team_config.guild(ctx.guild).teams()
         if team_name in teams:
             gm = teams[team_name]["GM"]
-            players = teams[team_name][players]
+            players = teams[team_name]["players"]
             await ctx.send("General Manager: " + gm)
             await ctx.send("Players: " + players)
         else:
