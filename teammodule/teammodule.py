@@ -1,23 +1,34 @@
 import discord
-from redbot.core import commands
+from redbot.core import commands, Config
 
 class TeamModule(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    # Create a new Config instance for storing team information
+    team_config = Config.get_conf(None, identifier=1234567890, force_registration=True)
+
+    # Define the team Config subgroup
+    team_config.register_guild(
+        name='',
+        general_manager=None,
+        players=[]
+    )
     @commands.command()
-    @commands.has_role(1025216358117544037)
-    async def createteam(self, ctx, general_manager: discord.Member, *, name: str):
-        """Creates a new team with the given name and assigns a general manager for that team."""
-        # Create the team
-        team = Team(name=name, general_manager=general_manager)
-        team.save()
+    @commands.has_role('1025216358117544037')
+    async def create_team(self, ctx, general_manager: discord.Member, *, name: str):
+        """Creates a new team with the given name and the specified user as the general manager."""
+        # Check if the general manager is already on a team
+        if await team_config.guild(general_manager.guild).general_manager() is not None or general_manager.id in await team_config.guild(general_manager.guild).players():
+            await ctx.send(f'{general_manager.mention} is already on a team.')
+            return
 
-        # Give the general manager the specified role
-        role = discord.utils.get(ctx.guild.roles, id=1028690403022606377)
-        await general_manager.add_roles(role)
+        # Create the new team
+        await team_config.guild(ctx.guild).name.set(name)
+        await team_config.guild(ctx.guild).general_manager.set(general_manager.id)
+        await team_config.guild(ctx.guild).players.set([])
 
-        await ctx.send(f'Successfully created team "{team.name}" and assigned {general_manager.mention} as the general manager.')
+        await ctx.send(f'{ctx.author.mention} has created the team "{name}" and has set {general_manager.mention} as the general manager.')
 
     @commands.command()
     @commands.has_role(1028690403022606377)
