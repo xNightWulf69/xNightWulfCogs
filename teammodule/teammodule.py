@@ -146,18 +146,15 @@ class TeamModule(commands.Cog):
     @commands.command()
     async def team(self, ctx, team_name: str):
         # Retrieve the team's general manager and players from the Config
-        general_manager = await self.team_config.guild(ctx.guild).general_manager()
-        players = await self.team_config.guild(ctx.guild).players()
+        general_manager_id = await self.team_config.guild(ctx.guild).teams.team(team_name).general_manager()
+        general_manager = ctx.guild.get_member(general_manager_id)
+        players = await self.team_config.guild(ctx.guild).teams.team(team_name).players()
 
         # Create the embed
         embed = discord.Embed(title=f'Team {team_name}', description='General Manager:')
         embed.add_field(name='\u200b', value=f'{general_manager}\n\u200b')
 
         # Add the players and their MMR to the embed
-        embed.add_field(name='Players', value='\u200b', inline=False)
-        for player in players:
-            mmr = await self.team_config.guild(ctx.guild).player(player).mmr()
-            embed.add_field(name='\u200b', value=f'{player} - {mmr / 100}\n\u200b', inline=False)
+        embed.add_field(name='Players', value='\n'.join([f'{player} ({player.mmr / 100})' for player in players]))
 
-        # Send the embed
         await ctx.send(embed=embed)
