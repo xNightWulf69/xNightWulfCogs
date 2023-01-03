@@ -98,7 +98,7 @@ class TeamModule(commands.Cog):
             await ctx.send('There are no free agents in this guild.')
 
     @commands.command()
-    async def invite(self, ctx, user: discord.User):
+    async def gminvite(self, ctx, user: discord.User):
         # Retrieve the team's general manager and players from the Config
         general_manager = await self.team_config.guild(ctx.guild).general_manager()
         players = await self.team_config.guild(ctx.guild).players()
