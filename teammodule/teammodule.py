@@ -21,7 +21,7 @@ class TeamModule(commands.Cog):
 
     @commands.command()
     @commands.has_role(1028690403022606377)
-    async def invite(self, ctx, player: discord.Member):
+    async def gminvite(self, ctx, player: discord.Member):
         """Invites a player to join the team."""
         # Check if the player is already on a team
         if player.team is not None:
