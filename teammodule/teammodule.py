@@ -2,7 +2,7 @@ import discord
 from redbot.core import Config, commands
 
 # Create a new Config instance for storing team information
-team_config = Config.get_conf(None, identifier=1234567890, force_registration=True)
+team_config = Config.get_conf(self, identifier=1234567890, force_registration=True)
 free_agents_config = Config.get_conf(None, identifier=12345678910, force_registration=True)
 # Define the team Config subgroup
 team_config.register_guild(
