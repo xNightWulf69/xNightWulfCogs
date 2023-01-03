@@ -3,14 +3,14 @@ from redbot.core import Config, commands
 
 # Create a new Config instance for storing team information
 team_config = Config.get_conf(None, identifier=1234567890, force_registration=True)
-free_agents_config = Config.get_conf(None, identifier=1234567890, force_registration=True)
+free_agents_config = Config.get_conf(None, identifier=12345678910, force_registration=True)
 # Define the team Config subgroup
 team_config.register_guild(
     name='',
     general_manager=None,
     players=[]
 )
-free_agents_config.register_guild(**{str(i): {'mmr': 0, 'tracker_link': ''} for i in range(100)})
+free_agents_config.register_guild(**{'free_agents': {}})
 class TeamModule(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -68,7 +68,7 @@ class TeamModule(commands.Cog):
             return
 
         # Register the user as a free agent
-        await self.free_agents_config.guild(ctx.guild).set_raw(str(ctx.author.id), value={'mmr': mmr, 'tracker_link': tracker_link})
+        await self.free_agents_config.guild(ctx.guild).free_agents.set_raw(str(ctx.author.id), value={'mmr': mmr, 'tracker_link': tracker_link})
 
         # Send a message in the channel and send the user's name, MMR, and tracker link to the designated channel
         await ctx.send(f'{ctx.author.mention} has registered as a free agent with MMR {mmr} and tracker link {tracker_link}.')
