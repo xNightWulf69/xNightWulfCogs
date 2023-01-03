@@ -8,10 +8,6 @@ free_agents_config = Config.get_conf(None, identifier=12345678910, force_registr
 team_config.register_guild(
     teams={}
 )
-team_config.register_teams(
-    general_manager=None,
-    players=[]
-)
 free_agents_config.register_guild(**{'free_agents': {}})
 class TeamModule(commands.Cog):
     def __init__(self, bot):
