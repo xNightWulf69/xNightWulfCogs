@@ -142,7 +142,9 @@ class TeamModule(commands.Cog):
         # Retrieve the team's general manager and players from the Config
         teams = await team_config.guild(ctx.guild).teams()
         if team_name in teams:
-            team = teams[team_name]
-            await ctx.send(team)
+            gm = teams[team_name][GM]
+            players = teams[team_name][players]
+            await ctx.send("General Manager: " + gm)
+            await ctx.send("Players: " + players)
         else:
             return await ctx.send("That team doesn's exist")
