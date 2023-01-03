@@ -57,6 +57,7 @@ class TeamModule(commands.Cog):
         if team_name not in teams:
             return await ctx.send("That team doesn't exist.")
         team = teams[team_name]
+        free_agents = await free_agents_config.guild(ctx.guild).free_agents()
 
         # Check if the player being invited is the general manager of the team
         if player.id == team["GM"]:
@@ -65,6 +66,10 @@ class TeamModule(commands.Cog):
         # Check if the inviter is the general manager of the team
         if ctx.author.id != team["GM"]:
             return await ctx.send("Only the general manager can invite players to the team.")
+
+        # Check if the player being invited is a registered free agent
+        if player.id not in free_agents:
+            return await ctx.send("That player is not a registered free agent.")
 
         # Create an embed with the invitation message and tick and cross reactions
         embed = discord.Embed(
@@ -87,8 +92,12 @@ class TeamModule(commands.Cog):
 
         # Add the player to the team if they reacted with the tick emoji, or send a message if they declined
         if str(reaction.emoji) == "🟢":
-            team["players"][player.id] = {"mmr": 0}
+            # Remove the player from the free agents Config
+            team["players"][player.id] = {"mmr": free_agents[player.id]["mmr"]}
             await team_config.guild(ctx.guild).teams.set(teams)
+            del free_agents[player.id]
+            await free_agents_config.guild(ctx.guild).free_agents.set(free_agents)
+            # Add the player to the team
             await ctx.send(f'{player.mention} has joined team **{team_name}**.')
         else:
             await ctx.send(f'{player.mention} declined the invitation to join team **{team_name}**.')
@@ -113,3 +122,14 @@ class TeamModule(commands.Cog):
                     color=discord.Color.green()
                 )
         await channel.send(embed=embed)
+
+    @commands.command()
+    @commands.has_permissions(manage_guild=True)
+    async def clear_configs(self, ctx):
+        # Clear the team Config
+        await self.team_config.clear_all_guilds()
+        await ctx.send("Team Config cleared.")
+
+        # Clear the free agents Config
+        await self.free_agents_config.clear_all_guilds()
+        await ctx.send("Free agents Config cleared.")
