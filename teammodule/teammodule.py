@@ -46,7 +46,7 @@ class TeamModule(commands.Cog):
             embed.add_field(name="General Manager", value=gmid.mention, inline=False)
             for player in players:
                 playerid = self.bot.get_user(int(player))
-                embed.add_field(name="Player", value=playerid.mention + " " + f'MMR: {teams[team_name]["players"][player]["mmr"] / 100}', inline=False)
+                embed.add_field(name="Player", value=playerid.mention + " " + f'Salary: {teams[team_name]["players"][player]["mmr"] / 100}', inline=False)
             current_mmr = sum([p["mmr"] for p in players.values()]) // 100
             remaining_mmr = 46 - current_mmr
             embed.add_field(name="Remaining Salary", value=remaining_mmr)
@@ -239,3 +239,43 @@ class TeamModule(commands.Cog):
                 await ctx.send(f'{new_gm.mention} is now the general manager of "{team_name}".')
                 return
         await ctx.send("You are not the general manager of a team.")
+
+    @commands.command()
+    @commands.has_role(1025216358117544037)
+    async def sub_invite(self, ctx, player: discord.Member):
+        # Retrieve the list of teams and free agents from the Config
+        teams = await team_config.guild(ctx.guild).teams()
+        free_agents = await free_agents_config.guild(ctx.guild).free_agents()
+
+        # Check if the player is a registered free agent
+        if player.id not in free_agents:
+            return await ctx.send("That player is not a registered free agent.")
+
+        # Check if the player is already on a team
+        for team in teams.values():
+            if player.id in team["players"]:
+                return await ctx.send("That player is already on a team.")
+
+        # Check if the invited player's MMR is lower than the lowest MMR player on the team
+        team = None
+        for t_name, t in teams.items():
+            if ctx.author.id == t["GM"]:
+                team = t
+                break
+        if team is not None:
+            lowest_mmr = float("inf")
+            for p in team["players"].values():
+                if p["mmr"] < lowest_mmr:
+                    lowest_mmr = p["mmr"]
+            if free_agents[player.id]["mmr"] > lowest_mmr:
+                return await ctx.send("The invited player's MMR is not lower than the lowest MMR player on the team.")
+        else:
+            return await ctx.send("You are not the general manager of a team.")
+
+        # Invite the player as a sub player
+        team["players"][player.id] = {"mmr": free_agents[player.id]["mmr"], "tracker": free_agents[player.id]["tracker"]}
+        await team_config.guild(ctx.guild).teams.set(teams)
+        del free_agents[player.id]
+        await free_agents_config.guild(ctx.guild).free_agents.set(free_agents)
+
+        await ctx.send(f'{player.mention} has been invited as a sub player to "{t_name}".')
