@@ -15,7 +15,7 @@ class TeamModule(commands.Cog):
         players=[]
     )
     @commands.command()
-    @commands.has_role('1025216358117544037')
+    @commands.has_role(1025216358117544037)
     async def create_team(self, ctx, general_manager: discord.Member, *, name: str):
         """Creates a new team with the given name and the specified user as the general manager."""
         # Check if the general manager is already on a team
