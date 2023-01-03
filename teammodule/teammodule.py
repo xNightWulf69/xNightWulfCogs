@@ -175,3 +175,21 @@ class TeamModule(commands.Cog):
             await ctx.send(f'{ctx.author.mention} has left their team.')
         else:
             await ctx.send("You are not on a team.")
+
+    @commands.command()
+    async def kick(self, ctx, player: discord.Member):
+        # Retrieve the list of teams from the Config
+        teams = await team_config.guild(ctx.guild).teams()
+        player_kicked = False
+        for team_name, team in teams.items():
+            if f"{ctx.author.id}" == team["GM"]:
+                if f"{player.id}" in team["players"]:
+                    # Remove the player from the team
+                    del team["players"][f"{player.id}"]
+                    await team_config.guild(ctx.guild).teams.set(teams)
+                    player_kicked = True
+                    break
+        if player_kicked:
+            await ctx.send(f'{player.mention} has been kicked from their team.')
+        else:
+            await ctx.send("You are not the general manager of a team or the player is not on a team.")
