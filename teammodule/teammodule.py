@@ -39,7 +39,7 @@ class TeamModule(commands.Cog):
             gmid = self.bot.get_user(int(gm))
             players = teams[team_name]["players"]
             await ctx.send("General Manager: " + gmid.mention)
-            for player, mmr in players:
+            for player in players:
                 await ctx.send("Players: " + player)
         else:
             return await ctx.send("That team doesn't exist")
