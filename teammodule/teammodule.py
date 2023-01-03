@@ -11,7 +11,6 @@ class TeamModule(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.team_config = team_config
-        self.free_agents_config = free_agents_config
 
     @commands.command()
     @commands.has_role(1025216358117544037)
