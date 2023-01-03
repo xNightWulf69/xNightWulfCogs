@@ -182,7 +182,7 @@ class TeamModule(commands.Cog):
         teams = await team_config.guild(ctx.guild).teams()
         player_kicked = False
         for team_name, team in teams.items():
-            if f"{ctx.author.id}" == team["GM"]:
+            if ctx.author.id == team["GM"]:
                 if f"{player.id}" in team["players"]:
                     # Remove the player from the team
                     del team["players"][f"{player.id}"]
