@@ -100,11 +100,14 @@ class TeamModule(commands.Cog):
             # Add the player to the team
             try:
                 remrole = discord.utils.get(ctx.guild.roles, name="Free Agent")
-                role = discord.utils.get(ctx.guild.roles, name=team_name)
-                await ctx.author.add_roles(role)
                 await ctx.author.remove_roles(remrole)
             except:
-                await ctx.send("A role with that name doesn't exist (This is porbably because the team role isn't made)")
+                await ctx.send("Can't remove the Free Agent role... (You probably didn't have it for some reason)")
+            try:
+                role = discord.utils.get(ctx.guild.roles, name=team_name)
+                await ctx.author.add_roles(role)
+            except:
+                await ctx.send("Couldn't give you your team role... (Probably becasue it hasn't been made yet)")
             await ctx.send(f'{player.mention} has joined team **{team_name}**.')
         else:
             await ctx.send(f'{player.mention} declined the invitation to join team **{team_name}**.')
