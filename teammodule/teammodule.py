@@ -133,7 +133,7 @@ class TeamModule(commands.Cog):
             await ctx.send(f'{player.mention} declined the invitation to join team **{team_name}**.')
 
     @commands.command()
-    async def register(self, ctx, mmr: int, tracker: str):
+    async def register(self, ctx, mmr: int, tracker: str, *, ingame_name: str):
         # Check if the player is already on a team
         teams = await team_config.guild(ctx.guild).teams()
         for team in teams.values():
@@ -145,13 +145,13 @@ class TeamModule(commands.Cog):
 
         # Add the player to the free agents Config
         free_agents = await free_agents_config.guild(ctx.guild).free_agents()
-        free_agents[ctx.author.id] = {"mmr": mmr, "tracker": tracker}
+        free_agents[ctx.author.id] = {"mmr": mmr, "tracker": tracker, "IGN": ingame_name}
         await free_agents_config.guild(ctx.guild).free_agents.set(free_agents)
-        await ctx.send(f'{ctx.author.mention} has been registered as a free agent with MMR {mmr} and tracker {tracker}.')
+        await ctx.send(f'{ctx.author.mention} has been registered as a free agent with MMR {mmr}, tracker {tracker} and in-game name {ingame_name}.')
         channel = self.bot.get_channel(1059726875527762012)
         embed = discord.Embed(
                     title=f'{ctx.author.display_name} has registered!',
-                    description=f'{ctx.author.mention} has registered as a free agent with MMR {mmr} and tracker {tracker}',
+                    description=f'{ctx.author.mention} has registered as a free agent with MMR {mmr} and tracker {tracker} and in-game name {ingame_name}.',
                     color=discord.Color.green()
                 )
         role = discord.utils.get(ctx.guild.roles, name="Free Agent")
@@ -343,3 +343,47 @@ class TeamModule(commands.Cog):
             embed.add_field(name=name, value=f"MMR: {data['mmr']}", inline=False)
 
         await ctx.send(embed=embed)
+
+    @commands.command()
+    async def player_info(self, ctx, player: discord.Member):
+        # Retrieve the list of teams and free agents from the Config
+        teams = await team_config.guild(ctx.guild).teams()
+        free_agents = await free_agents_config.guild(ctx.guild).free_agents()
+
+        # Check if the player is a registered free agent
+        if f"{player.id}" in free_agents:
+            # Create an embed with the player's information
+            embed = discord.Embed(title=player.display_name, color=discord.Color.blue())
+            embed.add_field(name="Tracker", value=free_agents[f"{player.id}"]["tracker"], inline=False)
+            embed.add_field(name="MMR", value=free_agents[f"{player.id}"]["mmr"], inline=True)
+            embed.add_field(name="Team", value="Free Agent", inline=True)
+
+            await ctx.send(embed=embed)
+            return
+
+        # Check if the player is on a team
+        for t_name, team in teams.items():
+            if f"{player.id}" in team["players"]:
+                # Create an embed with the player's information
+                embed = discord.Embed(title=player.display_name, color=discord.Color.blue())
+                embed.add_field(name="Tracker", value=team["players"][f"{player.id}"]["tracker"], inline=False)
+                embed.add_field(name="MMR", value=team["players"][f"{player.id}"]["mmr"], inline=True)
+                embed.add_field(name="Team", value=t_name, inline=True)
+                embed.add_field(name="position", value="Player", inline=True)
+
+                await ctx.send(embed=embed)
+                return
+         # Check if the player is on a team
+        for t_name, team in teams.items():
+            if f"{player.id}" in team["subplayers"]:
+                # Create an embed with the player's information
+                embed = discord.Embed(title=player.display_name, color=discord.Color.blue())
+                embed.add_field(name="Tracker", value=team["players"][f"{player.id}"]["tracker"], inline=False)
+                embed.add_field(name="MMR", value=team["players"][f"{player.id}"]["mmr"], inline=True)
+                embed.add_field(name="Team", value=t_name, inline=True)
+                embed.add_field(name="position", value="Sub", inline=True)
+
+                await ctx.send(embed=embed)
+                return
+        # If the player is not a free agent or on a team, send an error
+        await ctx.send("That player is not a registered free agent or on a team.")
