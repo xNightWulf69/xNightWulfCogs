@@ -199,19 +199,13 @@ class TeamModule(commands.Cog):
         # Retrieve the list of teams from the Config
         teams = await team_config.guild(ctx.guild).teams()
         team = teams[team_name]
-        player_kicked = False
         if f"{ctx.author.id}" in team["subplayers"]:
             del team["subplayers"][f"{ctx.author.id}"]
             await team_config.guild(ctx.guild).teams.set(teams)
-            player_kicked = True
+            await ctx.send(f'{ctx.author.mention} has left their team.')
         if f"{ctx.author.id}" in team["players"]:
             del team["players"][f"{ctx.author.id}"]
             await team_config.guild(ctx.guild).teams.set(teams)
-            player_kicked = True
-        if player_kicked:
-            await ctx.send(f'{ctx.author.mention} has left their team.')
-        else:
-            await ctx.send("You are not on a team.")
 
     @commands.command()
     async def gmkick(self, ctx, player: discord.Member):
