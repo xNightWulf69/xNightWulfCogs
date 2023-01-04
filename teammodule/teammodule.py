@@ -199,7 +199,7 @@ class TeamModule(commands.Cog):
         # Retrieve the list of teams from the Config
         teams = await team_config.guild(ctx.guild).teams()
         team = teams[team_name]
-        if f"{ctx.author.id}" in team["subplayers"]
+        if f"{ctx.author.id}" in team["subplayers"]:
             await ctx.send(team)
         else:
             await ctx.send("Not showing")
