@@ -363,6 +363,7 @@ class TeamModule(commands.Cog):
 
         # Check if the player is on a team
         for t_name, team in teams.items():
+            await ctx.send(team)
             if f"{player.id}" in team["players"]:
                 # Create an embed with the player's information
                 embed = discord.Embed(title=player.display_name, color=discord.Color.blue())
