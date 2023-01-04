@@ -264,6 +264,20 @@ class TeamModule(commands.Cog):
         # Check if the player being invited is a registered free agent
         if f"{player.id}" not in free_agents:
             return await ctx.send("That player is not a registered free agent.")
+
+        # Check if the invited player's MMR is lower than the lowest MMR player on the team
+        team = None
+        for t_name, t in teams.items():
+            if ctx.author.id == t["GM"]:
+                team = t
+                break
+        if team is not None:
+            lowest_mmr = float("inf")
+            for p in team["players"].values():
+                if p["mmr"] < lowest_mmr:
+                    lowest_mmr = p["mmr"]
+            if free_agents[f"{player.id}"]["mmr"] > lowest_mmr:
+                return await ctx.send("The invited player's MMR is not lower than the lowest MMR player on the team.")
         # Create an embed with the invitation message and tick and cross reactions
         embed = discord.Embed(
             title=f'Invitation to join team **{team_name}** as a sub',
