@@ -195,17 +195,17 @@ class TeamModule(commands.Cog):
         await ctx.send("That player is not a registered free agent or on a team.")
 
     @commands.command()
-    async def leave_team(self, ctx, *, team_name: str):
+    async def leave_team(self, ctx):
         # Retrieve the list of teams from the Config
         teams = await team_config.guild(ctx.guild).teams()
-        team = teams[team_name]
-        if f"{ctx.author.id}" in team["subplayers"]:
-            del team["subplayers"][f"{ctx.author.id}"]
-            await team_config.guild(ctx.guild).teams.set(teams)
-            await ctx.send(f'{ctx.author.mention} has left their team.')
-        if f"{ctx.author.id}" in team["players"]:
-            del team["players"][f"{ctx.author.id}"]
-            await team_config.guild(ctx.guild).teams.set(teams)
+        for team_name, team in teams.items():
+            if f"{ctx.author.id}" in team["subplayers"]:
+                del team["subplayers"][f"{ctx.author.id}"]
+                await team_config.guild(ctx.guild).teams.set(teams)
+                await ctx.send(f'{ctx.author.mention} has left their team.')
+            if f"{ctx.author.id}" in team["players"]:
+                del team["players"][f"{ctx.author.id}"]
+                await team_config.guild(ctx.guild).teams.set(teams)
 
     @commands.command()
     async def gmkick(self, ctx, player: discord.Member):
