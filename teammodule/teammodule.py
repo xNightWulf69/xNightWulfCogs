@@ -26,7 +26,7 @@ class TeamModule(commands.Cog):
             await ctx.send("That team name already exists.")
             return
         else:
-            teams[team_name] = {"GM": general_manager.id, "players": {}, "subplayers": {}, "tracker": {}}
+            teams[team_name] = {"GM": general_manager.id, "players": {}, "subplayers": {}, "tracker": {}, "IGN": {}}
         await team_config.guild(ctx.guild).teams.set(teams)
         # Give the general manager the role
         role = discord.utils.get(ctx.guild.roles, id=1028690403022606377)
@@ -113,7 +113,7 @@ class TeamModule(commands.Cog):
         # Add the player to the team if they reacted with the tick emoji, or send a message if they declined
         if str(reaction.emoji) == "🟢":
             # Remove the player from the free agents Config
-            team["players"][player.id] = {"mmr": free_agents[f"{player.id}"]["mmr"], "tracker": free_agents[f"{player.id}"]["tracker"]}
+            team["players"][player.id] = {"mmr": free_agents[f"{player.id}"]["mmr"], "tracker": free_agents[f"{player.id}"]["tracker"], "IGN": free_agents[f"{player.id}"]["IGN"]}
             await team_config.guild(ctx.guild).teams.set(teams)
             del free_agents[f"{player.id}"]
             await free_agents_config.guild(ctx.guild).free_agents.set(free_agents)
@@ -309,7 +309,7 @@ class TeamModule(commands.Cog):
         # Add the player to the team if they reacted with the tick emoji, or send a message if they declined
         if str(reaction.emoji) == "🟢":
             # Remove the player from the free agents Config
-            team["subplayers"][f"{player.id}"] = {"mmr": free_agents[f"{player.id}"]["mmr"], "tracker": free_agents[f"{player.id}"]["tracker"]}
+            team["subplayers"][f"{player.id}"] = {"mmr": free_agents[f"{player.id}"]["mmr"], "tracker": free_agents[f"{player.id}"]["tracker"], "IGN": free_agents[f"{player.id}"]["IGN"]}
             await team_config.guild(ctx.guild).teams.set(teams)
             del free_agents[f"{player.id}"]
             await free_agents_config.guild(ctx.guild).free_agents.set(free_agents)
@@ -357,6 +357,7 @@ class TeamModule(commands.Cog):
             embed.add_field(name="Tracker", value=free_agents[f"{player.id}"]["tracker"], inline=False)
             embed.add_field(name="MMR", value=free_agents[f"{player.id}"]["mmr"], inline=True)
             embed.add_field(name="Team", value="Free Agent", inline=True)
+            embed.add_field(name="In-game Name", value=free_agents[f"{player.id}"]["IGN"], inline=False)
 
             await ctx.send(embed=embed)
             return
@@ -368,9 +369,10 @@ class TeamModule(commands.Cog):
                 # Create an embed with the player's information
                 embed = discord.Embed(title=player.display_name, color=discord.Color.blue())
                 embed.add_field(name="Tracker", value=team["players"][f"{player.id}"]["tracker"], inline=False)
-                embed.add_field(name="MMR", value=team["players"][f"{player.id}"]["mmr"], inline=True)
-                embed.add_field(name="Team", value=t_name, inline=True)
-                embed.add_field(name="position", value="Player", inline=True)
+                embed.add_field(name="MMR", value=team["players"][f"{player.id}"]["mmr"], inline=False)
+                embed.add_field(name="Team", value=t_name, inline=False)
+                embed.add_field(name="position", value="Player", inline=False)
+                embed.add_field(name="In-game Name", value=team["players"][f"{player.id}"]["IGN"], inline=False)
 
                 await ctx.send(embed=embed)
                 return
@@ -380,9 +382,10 @@ class TeamModule(commands.Cog):
                 # Create an embed with the player's information
                 embed = discord.Embed(title=player.display_name, color=discord.Color.blue())
                 embed.add_field(name="Tracker", value=team["players"][f"{player.id}"]["tracker"], inline=False)
-                embed.add_field(name="MMR", value=team["players"][f"{player.id}"]["mmr"], inline=True)
-                embed.add_field(name="Team", value=t_name, inline=True)
-                embed.add_field(name="position", value="Sub", inline=True)
+                embed.add_field(name="MMR", value=team["players"][f"{player.id}"]["mmr"], inline=False)
+                embed.add_field(name="Team", value=t_name, inline=False)
+                embed.add_field(name="position", value="Sub", inline=False)
+                embed.add_field(name="In-game Name", value=team["players"][f"{player.id}"]["IGN"], inline=False)
 
                 await ctx.send(embed=embed)
                 return
