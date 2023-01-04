@@ -199,7 +199,10 @@ class TeamModule(commands.Cog):
         # Retrieve the list of teams from the Config
         teams = await team_config.guild(ctx.guild).teams()
         team = teams[team_name]
-        await ctx.send(team)
+        if f"{ctx.author.id}" in team["subplayers"]
+            await ctx.send(team)
+        else:
+            await ctx.send("Not showing")
 
     @commands.command()
     async def gmkick(self, ctx, player: discord.Member):
