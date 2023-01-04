@@ -339,6 +339,7 @@ class TeamModule(commands.Cog):
         # Add a field for each free agent
         for fa_id, data in free_agents.items():
             fa = self.bot.get_user(int(fa_id))
-            embed.add_field(name=fa.display_name, value=f"MMR: {data['mmr']}", inline=True)
+            name = fa.display_name + "#" + fa.discriminator
+            embed.add_field(name=name, value=f"MMR: {data['mmr']}", inline=False)
 
         await ctx.send(embed=embed)
