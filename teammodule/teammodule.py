@@ -209,7 +209,7 @@ class TeamModule(commands.Cog):
             await team_config.guild(ctx.guild).teams.set(teams)
             player_kicked = True
         if player_kicked:
-            await ctx.send(f'{player.mention} has left their team.')
+            await ctx.send(f'{ctx.author.mention} has left their team.')
         else:
             await ctx.send("You are not on a team.")
 
