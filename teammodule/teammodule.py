@@ -195,12 +195,11 @@ class TeamModule(commands.Cog):
         await ctx.send("That player is not a registered free agent or on a team.")
 
     @commands.command()
-    async def leave_team(self, ctx):
+    async def leave_team(self, ctx, *, team_name: str):
         # Retrieve the list of teams from the Config
         teams = await team_config.guild(ctx.guild).teams()
-        player_left = False
-        for team_name, team in teams.items():
-            await ctx.send(team)
+        team = teams[team_name]
+        await ctx.send(team)
 
     @commands.command()
     async def gmkick(self, ctx, player: discord.Member):
