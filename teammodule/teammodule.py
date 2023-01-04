@@ -205,12 +205,9 @@ class TeamModule(commands.Cog):
                 del team["players"][f"{ctx.author.id}"]
                 await team_config.guild(ctx.guild).teams.set(teams)
                 player_left = True
+                break
         for team_name, team in teams.items():
-            if f"{ctx.author.id}" in team["subplayers"]:
-                # Remove the player from the team
-                del team["subplayers"][f"{ctx.author.id}"]
-                await team_config.guild(ctx.guild).teams.set(teams)
-                player_left = True
+            ctx.send(team)
         if player_left:
             await ctx.send(f'{ctx.author.mention} has left their team.')
         else:
