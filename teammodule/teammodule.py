@@ -223,7 +223,6 @@ class TeamModule(commands.Cog):
         for team_name, team in teams.items():
             if ctx.author.id == team["GM"]:
                 if f"{player.id}" in team["players"]:
-                    # Remove the player from the team
                     del team["players"][f"{player.id}"]
                     await team_config.guild(ctx.guild).teams.set(teams)
                     player_kicked = True
@@ -328,3 +327,18 @@ class TeamModule(commands.Cog):
             await ctx.send(f'{player.mention} has joined team **{team_name}** as a sub.')
         else:
             await ctx.send(f'{player.mention} declined the invitation to join team **{team_name}** as a sub.')
+
+    @commands.command()
+    async def list_free_agents(self, ctx):
+        # Retrieve the list of free agents from the Config
+        free_agents = await free_agents_config.guild(ctx.guild).free_agents()
+
+        # Create an embed to display the free agents
+        embed = discord.Embed(title="Free Agents", color=discord.Color.blue())
+
+        # Add a field for each free agent
+        for fa_id, data in free_agents.items():
+            fa = self.bot.get_user(int(fa_id))
+            embed.add_field(name=fa.display_name, value=f"MMR: {data['mmr']}", inline=True)
+
+        await ctx.send(embed=embed)
