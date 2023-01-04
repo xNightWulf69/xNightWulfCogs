@@ -26,7 +26,7 @@ class TeamModule(commands.Cog):
             await ctx.send("That team name already exists.")
             return
         else:
-            teams[team_name] = {"GM": general_manager.id, "players": {}, "subplayers": {}}
+            teams[team_name] = {"GM": general_manager.id, "players": {}, "subplayers": {}, "tracker": {}}
         await team_config.guild(ctx.guild).teams.set(teams)
         # Give the general manager the role
         role = discord.utils.get(ctx.guild.roles, id=1028690403022606377)
