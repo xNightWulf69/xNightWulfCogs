@@ -224,6 +224,12 @@ class TeamModule(commands.Cog):
                     await team_config.guild(ctx.guild).teams.set(teams)
                     player_kicked = True
                     break
+                if f"{player.id}" in team["subplayers"]:
+                    # Remove the player from the team
+                    del team["subplayers"][f"{player.id}"]
+                    await team_config.guild(ctx.guild).teams.set(teams)
+                    player_kicked = True
+                    break
         if player_kicked:
             await ctx.send(f'{player.mention} has been kicked from their team.')
         else:
