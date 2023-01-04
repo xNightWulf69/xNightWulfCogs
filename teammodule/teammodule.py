@@ -26,7 +26,7 @@ class TeamModule(commands.Cog):
             await ctx.send("That team name already exists.")
             return
         else:
-            teams[team_name] = {"GM": general_manager.id, "players": {}}
+            teams[team_name] = {"GM": general_manager.id, "players": {}, "subplayers": {}}
         await team_config.guild(ctx.guild).teams.set(teams)
         # Give the general manager the role
         role = discord.utils.get(ctx.guild.roles, id=1028690403022606377)
@@ -43,10 +43,14 @@ class TeamModule(commands.Cog):
             gm = teams[team_name]["GM"]
             gmid = self.bot.get_user(int(gm))
             players = teams[team_name]["players"]
+            subplayers = teams[team_name]["subplayers"]
             embed.add_field(name="General Manager", value=gmid.mention, inline=False)
             for player in players:
                 playerid = self.bot.get_user(int(player))
                 embed.add_field(name="Player", value=playerid.mention + " " + f'Salary: {teams[team_name]["players"][player]["mmr"] / 100}', inline=False)
+            for player in subplayers:
+                playerid = self.bot.get_user(int(player))
+                embed.add_field(name="Sub", value=playerid.mention, inline=False)
             current_mmr = sum([p["mmr"] for p in players.values()]) // 100
             remaining_mmr = 46 - current_mmr
             embed.add_field(name="Remaining Salary", value=remaining_mmr)
@@ -241,40 +245,62 @@ class TeamModule(commands.Cog):
         await ctx.send("You are not the general manager of a team.")
 
     @commands.command()
-    async def sub_invite(self, ctx, player: discord.Member):
-        # Retrieve the list of teams and free agents from the Config
+    async def gmsubinvite(self, ctx, player: discord.Member, *, team_name: str):
+        # Retrieve the list of teams from the Config
         teams = await team_config.guild(ctx.guild).teams()
+        if team_name not in teams:
+            return await ctx.send("That team doesn't exist.")
+        team = teams[team_name]
         free_agents = await free_agents_config.guild(ctx.guild).free_agents()
 
-        # Check if the player is a registered free agent
+        # Check if the player being invited is the general manager of the team
+        if player.id == team["GM"]:
+            return await ctx.send("The general manager can't be invited to their own team.")
+
+        # Check if the inviter is the general manager of the team
+        if ctx.author.id != team["GM"]:
+            return await ctx.send("Only the general manager can invite players to the team.")
+
+        # Check if the player being invited is a registered free agent
         if f"{player.id}" not in free_agents:
             return await ctx.send("That player is not a registered free agent.")
+        # Create an embed with the invitation message and tick and cross reactions
+        embed = discord.Embed(
+            title=f'Invitation to join team **{team_name}** as a sub',
+            description=f'{player.mention}, you have been invited to join team **{team_name}** as a sub by {ctx.author.mention}.\n\n'
+                        f'React with 🟢 to accept the invitation or 🔴 to decline.',
+            color=discord.Color.green()
+        )
+        message = await ctx.send(embed=embed)
+        await message.add_reaction("🟢")
+        await message.add_reaction("🔴")
 
-        # Check if the player is already on a team
-        for team in teams.values():
-            if f"{player.id}" in team["players"]:
-                return await ctx.send("That player is already on a team.")
+        # Wait for the player to react
+        def check(reaction, user):
+            return user == player and str(reaction.emoji) in ["🟢", "🔴"]
+        try:
+            reaction, user = await self.bot.wait_for("reaction_add", check=check, timeout=300.0)
+        except asyncio.TimeoutError:
+            return await ctx.send("Invitation expired.")
 
-        # Check if the invited player's MMR is lower than the lowest MMR player on the team
-        team = None
-        for t_name, t in teams.items():
-            if ctx.author.id == t["GM"]:
-                team = t
-                break
-        if team is not None:
-            lowest_mmr = float("inf")
-            for p in team["players"].values():
-                if p["mmr"] < lowest_mmr:
-                    lowest_mmr = p["mmr"]
-            if free_agents[f"{player.id}"]["mmr"] > lowest_mmr:
-                return await ctx.send("The invited player's MMR is not lower than the lowest MMR player on the team.")
+        # Add the player to the team if they reacted with the tick emoji, or send a message if they declined
+        if str(reaction.emoji) == "🟢":
+            # Remove the player from the free agents Config
+            team["subplayers"][player.id] = {"mmr": free_agents[f"{player.id}"]["mmr"]}
+            await team_config.guild(ctx.guild).teams.set(teams)
+            del free_agents[f"{player.id}"]
+            await free_agents_config.guild(ctx.guild).free_agents.set(free_agents)
+            # Add the player to the team
+            try:
+                remrole = discord.utils.get(ctx.guild.roles, name="Free Agent")
+                await player.remove_roles(remrole)
+            except:
+                await ctx.send("Can't remove the Free Agent role... (You probably didn't have it for some reason)")
+            try:
+                role = discord.utils.get(ctx.guild.roles, name=team_name)
+                await ctx.author.add_roles(role)
+            except:
+                await ctx.send("Couldn't give you your team role... (Probably becasue it hasn't been made yet)")
+            await ctx.send(f'{player.mention} has joined team **{team_name}** as a sub.')
         else:
-            return await ctx.send("You are not the general manager of a team.")
-
-        # Invite the player as a sub player
-        team["players"][f"{player.id}"] = {"mmr": free_agents[f"{player.id}"]["mmr"], "tracker": free_agents[f"{player.id}"]["tracker"]}
-        await team_config.guild(ctx.guild).teams.set(teams)
-        del free_agents[f"{player.id}"]
-        await free_agents_config.guild(ctx.guild).free_agents.set(free_agents)
-
-        await ctx.send(f'{player.mention} has been invited as a sub player to "{t_name}".')
+            await ctx.send(f'{player.mention} declined the invitation to join team **{team_name}** as a sub.')
