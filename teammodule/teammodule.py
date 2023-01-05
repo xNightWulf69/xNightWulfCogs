@@ -378,7 +378,15 @@ class TeamModule(commands.Cog):
          # Check if the player is on a team
         for t_name, team in teams.items():
             if f"{player.id}" in team["subplayers"]:
-                await ctx.send(team)
+                # Create an embed with the player's information
+                embed = discord.Embed(title=player.display_name, color=discord.Color.blue())
+                embed.add_field(name="Tracker", value=team["subplayers"][f"{player.id}"]["tracker"], inline=False)
+                embed.add_field(name="MMR", value=team["subplayers"][f"{player.id}"]["mmr"], inline=False)
+                embed.add_field(name="Team", value=t_name, inline=False)
+                embed.add_field(name="Position", value="Sub", inline=False)
+                embed.add_field(name="In-game Name", value=team["subplayers"][f"{player.id}"]["IGN"], inline=False)
+
+                await ctx.send(embed=embed)
                 return
         # If the player is not a free agent or on a team, send an error
         await ctx.send("That player is not a registered free agent or on a team.")
