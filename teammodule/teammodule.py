@@ -39,7 +39,7 @@ class TeamModule(commands.Cog):
         # Retrieve the team's general manager and players from the Config
         teams = await team_config.guild(ctx.guild).teams()
         if team_name in teams:
-            embed = discord.Embed(title=f"{team_name}")
+            embed = discord.Embed(title=f"{team_name}", color=16773632)
             gm = teams[team_name]["GM"]
             gmid = self.bot.get_user(int(gm))
             players = teams[team_name]["players"]
@@ -96,7 +96,7 @@ class TeamModule(commands.Cog):
             title=f'Invitation to join team **{team_name}**',
             description=f'{player.mention}, you have been invited to join team **{team_name}** by {ctx.author.mention}.\n\n'
                         f'React with 🟢 to accept the invitation or 🔴 to decline.',
-            color=discord.Color.green()
+            color=16773632
         )
         message = await ctx.send(embed=embed)
         await message.add_reaction("🟢")
@@ -152,7 +152,7 @@ class TeamModule(commands.Cog):
         embed = discord.Embed(
                     title=f'{ctx.author.display_name} has registered!',
                     description=f'{ctx.author.mention} has registered as a free agent with MMR {mmr} and tracker {tracker} and in-game name {ingame_name}.',
-                    color=discord.Color.green()
+                    color=16773632
                 )
         role = discord.utils.get(ctx.guild.roles, name="Free Agent")
         await ctx.author.add_roles(role)
@@ -292,7 +292,7 @@ class TeamModule(commands.Cog):
             title=f'Invitation to join team **{team_name}** as a sub',
             description=f'{player.mention}, you have been invited to join team **{team_name}** as a sub by {ctx.author.mention}.\n\n'
                         f'React with 🟢 to accept the invitation or 🔴 to decline.',
-            color=discord.Color.green()
+            color=16773632
         )
         message = await ctx.send(embed=embed)
         await message.add_reaction("🟢")
@@ -334,7 +334,7 @@ class TeamModule(commands.Cog):
         free_agents = await free_agents_config.guild(ctx.guild).free_agents()
 
         # Create an embed to display the free agents
-        embed = discord.Embed(title="Free Agents", color=discord.Color.blue())
+        embed = discord.Embed(title="Free Agents", color=16773632)
 
         # Add a field for each free agent
         for fa_id, data in free_agents.items():
@@ -353,8 +353,8 @@ class TeamModule(commands.Cog):
         # Check if the player is a registered free agent
         if f"{player.id}" in free_agents:
             # Create an embed with the player's information
-            embed = discord.Embed(title=player.display_name, color=discord.Color.blue())
-            embed.add_field(name="Tracker", value=free_agents[f"{player.id}"]["tracker"], inline=False)
+            embed = discord.Embed(title=player.display_name, color=16773632)
+            embed.add_field(name="Tracker", value="click here"(free_agents[f"{player.id}"]["tracker"]), inline=False)
             embed.add_field(name="MMR", value=free_agents[f"{player.id}"]["mmr"], inline=False)
             embed.add_field(name="Team", value="Free Agent", inline=False)
             embed.add_field(name="In-game Name", value=free_agents[f"{player.id}"]["IGN"], inline=False)
@@ -366,8 +366,8 @@ class TeamModule(commands.Cog):
         for t_name, team in teams.items():
             if f"{player.id}" in team["players"]:
                 # Create an embed with the player's information
-                embed = discord.Embed(title=player.display_name, color=discord.Color.blue())
-                embed.add_field(name="Tracker", value=team["players"][f"{player.id}"]["tracker"], inline=False)
+                embed = discord.Embed(title=player.display_name, color=16773632)
+                embed.add_field(name="Tracker", value="click here"(team["players"][f"{player.id}"]["tracker"]), inline=False)
                 embed.add_field(name="MMR", value=team["players"][f"{player.id}"]["mmr"], inline=False)
                 embed.add_field(name="Team", value=t_name, inline=False)
                 embed.add_field(name="Position", value="Player", inline=False)
@@ -379,8 +379,8 @@ class TeamModule(commands.Cog):
         for t_name, team in teams.items():
             if f"{player.id}" in team["subplayers"]:
                 # Create an embed with the player's information
-                embed = discord.Embed(title=player.display_name, color=discord.Color.blue())
-                embed.add_field(name="Tracker", value=team["subplayers"][f"{player.id}"]["tracker"], inline=False)
+                embed = discord.Embed(title=player.display_name, color=16773632)
+                embed.add_field(name="Tracker", value="Click here"(team["subplayers"][f"{player.id}"]["tracker"]), inline=False)
                 embed.add_field(name="MMR", value=team["subplayers"][f"{player.id}"]["mmr"], inline=False)
                 embed.add_field(name="Team", value=t_name, inline=False)
                 embed.add_field(name="Position", value="Sub", inline=False)
