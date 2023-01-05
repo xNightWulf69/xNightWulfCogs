@@ -236,7 +236,7 @@ class TeamModule(commands.Cog):
                 if f"{player.id}" in team["players"]:
                     del team["players"][f"{player.id}"]
                     remrole = discord.utils.get(ctx.guild.roles, name=team_name)
-                    await ctx.author.remove_roles(remrole)
+                    await player.remove_roles(remrole)
                     await team_config.guild(ctx.guild).teams.set(teams)
                     player_kicked = True
                     break
@@ -244,7 +244,7 @@ class TeamModule(commands.Cog):
                     # Remove the player from the team
                     del team["subplayers"][f"{player.id}"]
                     remrole = discord.utils.get(ctx.guild.roles, name=team_name)
-                    await ctx.author.remove_roles(remrole)
+                    await player.remove_roles(remrole)
                     await team_config.guild(ctx.guild).teams.set(teams)
                     player_kicked = True
                     break
