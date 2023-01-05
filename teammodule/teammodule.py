@@ -51,7 +51,7 @@ class TeamModule(commands.Cog):
             for player in subplayers:
                 playerid = self.bot.get_user(int(player))
                 embed.add_field(name="Sub", value=playerid.mention, inline=False)
-            current_mmr = sum([p["mmr"] for p in players.values()]) // 100
+            current_mmr = sum([p["mmr"] for p in players.values()]) / 100
             remaining_mmr = 46 - current_mmr
             embed.add_field(name="Remaining Salary", value=remaining_mmr)
             embed.set_footer(text="The Swarm", icon_url="https://cdn.discordapp.com/attachments/1058010972138254348/1058012219390046288/IMG_0038.png")
@@ -345,7 +345,7 @@ class TeamModule(commands.Cog):
         for fa_id, data in free_agents.items():
             fa = self.bot.get_user(int(fa_id))
             name = fa.display_name + "#" + fa.discriminator
-            embed.add_field(name=name, value=f"Salary: {data['mmr']//100}", inline=True)
+            embed.add_field(name=name, value=f"Salary: {data['mmr']/100}", inline=True)
 
         await ctx.send(embed=embed)
 
@@ -363,7 +363,7 @@ class TeamModule(commands.Cog):
             embed.set_footer(text="The Swarm", icon_url="https://cdn.discordapp.com/attachments/1058010972138254348/1058012219390046288/IMG_0038.png")
             link = free_agents[f"{player.id}"]["tracker"]
             embed.add_field(name="Tracker", value=f"[Click here]({link})", inline=False)
-            embed.add_field(name="Salary", value=free_agents[f"{player.id}"]["mmr"], inline=False)
+            embed.add_field(name="Salary", value=free_agents[f"{player.id}"]["mmr"]/100, inline=False)
             embed.add_field(name="Team", value="Free Agent", inline=False)
             embed.add_field(name="In-game Name", value=free_agents[f"{player.id}"]["IGN"], inline=False)
 
@@ -379,7 +379,7 @@ class TeamModule(commands.Cog):
                 embed.set_footer(text="The Swarm", icon_url="https://cdn.discordapp.com/attachments/1058010972138254348/1058012219390046288/IMG_0038.png")
                 link = team["players"][f"{player.id}"]["tracker"]
                 embed.add_field(name="Tracker", value=f"[Click here]({link})", inline=False)
-                embed.add_field(name="Salary", value=team["players"][f"{player.id}"]["mmr"], inline=False)
+                embed.add_field(name="Salary", value=team["players"][f"{player.id}"]["mmr"]/100, inline=False)
                 embed.add_field(name="Team", value=t_name, inline=False)
                 embed.add_field(name="Position", value="Player", inline=False)
                 embed.add_field(name="In-game Name", value=team["players"][f"{player.id}"]["IGN"], inline=False)
@@ -395,7 +395,7 @@ class TeamModule(commands.Cog):
                 embed.set_footer(text="The Swarm", icon_url="https://cdn.discordapp.com/attachments/1058010972138254348/1058012219390046288/IMG_0038.png")
                 link = team['subplayers'][f'{player.id}']['tracker']
                 embed.add_field(name="Tracker", value=f"[Click here]({link})", inline=False)
-                embed.add_field(name="Salary", value=team["subplayers"][f"{player.id}"]["mmr"], inline=False)
+                embed.add_field(name="Salary", value=team["subplayers"][f"{player.id}"]["mmr"]/100, inline=False)
                 embed.add_field(name="Team", value=t_name, inline=False)
                 embed.add_field(name="Position", value="Substitute", inline=False)
                 embed.add_field(name="In-game Name", value=team["subplayers"][f"{player.id}"]["IGN"], inline=False)
