@@ -354,7 +354,9 @@ class TeamModule(commands.Cog):
         if f"{player.id}" in free_agents:
             # Create an embed with the player's information
             embed = discord.Embed(title=player.display_name, color=16773632)
-            embed.add_field(name="Tracker", value="click here"(free_agents[f"{player.id}"]["tracker"]), inline=False)
+            embed.set_thumbnail(url=player.avatar_url)
+            link = free_agents[f"{player.id}"]["tracker"]
+            embed.add_field(name="Tracker", value=f"[Click here]({link})", inline=False)
             embed.add_field(name="MMR", value=free_agents[f"{player.id}"]["mmr"], inline=False)
             embed.add_field(name="Team", value="Free Agent", inline=False)
             embed.add_field(name="In-game Name", value=free_agents[f"{player.id}"]["IGN"], inline=False)
@@ -367,7 +369,9 @@ class TeamModule(commands.Cog):
             if f"{player.id}" in team["players"]:
                 # Create an embed with the player's information
                 embed = discord.Embed(title=player.display_name, color=16773632)
-                embed.add_field(name="Tracker", value="click here"(team["players"][f"{player.id}"]["tracker"]), inline=False)
+                embed.set_thumbnail(url=player.avatar_url)
+                link = team["players"][f"{player.id}"]["tracker"]
+                embed.add_field(name="Tracker", value=f"[Click here]({link})", inline=False)
                 embed.add_field(name="MMR", value=team["players"][f"{player.id}"]["mmr"], inline=False)
                 embed.add_field(name="Team", value=t_name, inline=False)
                 embed.add_field(name="Position", value="Player", inline=False)
@@ -380,11 +384,12 @@ class TeamModule(commands.Cog):
             if f"{player.id}" in team["subplayers"]:
                 # Create an embed with the player's information
                 embed = discord.Embed(title=player.display_name, color=16773632)
+                embed.set_thumbnail(url=player.avatar_url)
                 link = team['subplayers'][f'{player.id}']['tracker']
                 embed.add_field(name="Tracker", value=f"[Click here]({link})", inline=False)
                 embed.add_field(name="MMR", value=team["subplayers"][f"{player.id}"]["mmr"], inline=False)
                 embed.add_field(name="Team", value=t_name, inline=False)
-                embed.add_field(name="Position", value="Sub", inline=False)
+                embed.add_field(name="Position", value="Substitute", inline=False)
                 embed.add_field(name="In-game Name", value=team["subplayers"][f"{player.id}"]["IGN"], inline=False)
 
                 await ctx.send(embed=embed)
