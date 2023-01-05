@@ -127,7 +127,7 @@ class TeamModule(commands.Cog):
                 await ctx.send("Can't remove the Free Agent role... (You probably didn't have it for some reason)")
             try:
                 role = discord.utils.get(ctx.guild.roles, name=team_name)
-                await ctx.author.add_roles(role)
+                await player.add_roles(role)
             except:
                 await ctx.send("Couldn't give you your team role... (Probably becasue it hasn't been made yet)")
             await ctx.send(f'{player.mention} has joined team **{team_name}**.')
@@ -254,6 +254,10 @@ class TeamModule(commands.Cog):
                 await team_config.guild(ctx.guild).teams.set(teams)
                 await ctx.send(f'{new_gm.mention} is now the general manager of "{team_name}".')
                 return
+        remrole = discord.utils.get(ctx.guild.roles, name="General Manager")
+        await ctx.author.remove_roles(remrole)
+        role = discord.utils.get(ctx.guild.roles, name="General Manager")
+        await new_gm.add_roles(role)
         await ctx.send("You are not the general manager of a team.")
 
     @commands.command()
@@ -325,7 +329,7 @@ class TeamModule(commands.Cog):
                 await ctx.send("Can't remove the Free Agent role... (You probably didn't have it for some reason)")
             try:
                 role = discord.utils.get(ctx.guild.roles, name=team_name)
-                await ctx.author.add_roles(role)
+                await player.add_roles(role)
             except:
                 await ctx.send("Couldn't give you your team role... (Probably becasue it hasn't been made yet)")
             await ctx.send(f'{player.mention} has joined team **{team_name}** as a sub.')
