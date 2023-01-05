@@ -345,7 +345,7 @@ class TeamModule(commands.Cog):
         for fa_id, data in free_agents.items():
             fa = self.bot.get_user(int(fa_id))
             name = fa.display_name + "#" + fa.discriminator
-            embed.add_field(name=name, value=f"MMR: {data['mmr']}", inline=True)
+            embed.add_field(name=name, value=f"Salary: {data['mmr']//100}", inline=True)
 
         await ctx.send(embed=embed)
 
