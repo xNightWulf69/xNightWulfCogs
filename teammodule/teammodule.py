@@ -431,7 +431,7 @@ class TeamModule(commands.Cog):
 
         # Add a field for each team
         for team_name in teams.keys():
-        embed.add_field(name=team_name, value="\u200b", inline=False)
-        embed.set_footer(text="The Swarm", icon_url="https://cdn.discordapp.com/attachments/1058010972138254348/1058012219390046288/IMG_0038.png")
+            embed.add_field(name=team_name, value="\u200b", inline=False)
+            embed.set_footer(text="The Swarm", icon_url="https://cdn.discordapp.com/attachments/1058010972138254348/1058012219390046288/IMG_0038.png")
 
         await ctx.send(embed=embed)
