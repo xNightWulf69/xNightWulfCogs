@@ -108,7 +108,7 @@ class TeamModule(commands.Cog):
         def check(reaction, user):
             return user == player and str(reaction.emoji) in ["🟢", "🔴"]
         try:
-            reaction, user = await self.bot.wait_for("reaction_add", check=check, timeout=300.0)
+            reaction, user = await self.bot.wait_for("reaction_add", check=check, timeout=1800.0)
         except asyncio.TimeoutError:
             return await ctx.send("Invitation expired.")
 
@@ -306,7 +306,7 @@ class TeamModule(commands.Cog):
         def check(reaction, user):
             return user == player and str(reaction.emoji) in ["🟢", "🔴"]
         try:
-            reaction, user = await self.bot.wait_for("reaction_add", check=check, timeout=300.0)
+            reaction, user = await self.bot.wait_for("reaction_add", check=check, timeout=1800.0)
         except asyncio.TimeoutError:
             return await ctx.send("Invitation expired.")
 
