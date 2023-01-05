@@ -32,7 +32,7 @@ class TeamModule(commands.Cog):
         role = discord.utils.get(ctx.guild.roles, id=1028690403022606377)
         await general_manager.add_roles(role)
         remrole = discord.utils.get(ctx.guild.roles, name="Free Agent")
-        await player.remove_roles(remrole)
+        await general_manager.remove_roles(remrole)
 
         await ctx.send(f'Team "{team_name}" has been created with {general_manager.mention} as the general manager.')
 
