@@ -420,3 +420,18 @@ class TeamModule(commands.Cog):
                 return
         # If the player is not a free agent or on a team, send an error
         await ctx.send("That player is not a registered free agent or on a team.")
+
+    @commands.command()
+    async def list_teams(self, ctx):
+        # Retrieve the list of teams from the Config
+        teams = await team_config.guild(ctx.guild).teams()
+
+        # Create an embed to display the teams
+        embed = discord.Embed(title="Teams", color=16773632)
+
+        # Add a field for each team
+        for team_name in teams.keys():
+        embed.add_field(name=team_name, value="\u200b", inline=False)
+        embed.set_footer(text="The Swarm", icon_url="https://cdn.discordapp.com/attachments/1058010972138254348/1058012219390046288/IMG_0038.png")
+
+        await ctx.send(embed=embed)
