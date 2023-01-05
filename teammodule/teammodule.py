@@ -54,6 +54,7 @@ class TeamModule(commands.Cog):
             current_mmr = sum([p["mmr"] for p in players.values()]) // 100
             remaining_mmr = 46 - current_mmr
             embed.add_field(name="Remaining Salary", value=remaining_mmr)
+            embed.set_footer(text="The Swarm", icon_url="https://cdn.discordapp.com/attachments/1058010972138254348/1058012219390046288/IMG_0038.png")
             await ctx.send(embed=embed)
         else:
             return await ctx.send("That team doesn't exist")
@@ -88,7 +89,7 @@ class TeamModule(commands.Cog):
             for p_id, p in team["players"].items():
                 current_mmr += p["mmr"]
             if current_mmr + free_agents[f"{player.id}"]["mmr"] > 4600:
-                return await ctx.send("The combined MMR of the current players and the invited player is more than 1000.")
+                return await ctx.send("The combined Salary of the current players and the invited player is more than 46.")
         else:
             return await ctx.send("You are not the general manager of a team.")
         # Create an embed with the invitation message and tick and cross reactions
@@ -98,6 +99,7 @@ class TeamModule(commands.Cog):
                         f'React with 🟢 to accept the invitation or 🔴 to decline.',
             color=16773632
         )
+        embed.set_footer(text="The Swarm", icon_url="https://cdn.discordapp.com/attachments/1058010972138254348/1058012219390046288/IMG_0038.png")
         message = await ctx.send(embed=embed)
         await message.add_reaction("🟢")
         await message.add_reaction("🔴")
@@ -154,6 +156,7 @@ class TeamModule(commands.Cog):
                     description=f'{ctx.author.mention} has registered as a free agent with MMR {mmr} and tracker {tracker} and in-game name {ingame_name}.',
                     color=16773632
                 )
+        embed.set_footer(text="The Swarm", icon_url="https://cdn.discordapp.com/attachments/1058010972138254348/1058012219390046288/IMG_0038.png")
         role = discord.utils.get(ctx.guild.roles, name="Free Agent")
         await ctx.author.add_roles(role)
         await channel.send(embed=embed)
@@ -286,7 +289,7 @@ class TeamModule(commands.Cog):
                 if p["mmr"] < lowest_mmr:
                     lowest_mmr = p["mmr"]
             if free_agents[f"{player.id}"]["mmr"] > lowest_mmr:
-                return await ctx.send("The invited player's MMR is not lower than the lowest MMR player on the team.")
+                return await ctx.send("The invited player's salary is not lower than the lowest salary player on the team.")
         # Create an embed with the invitation message and tick and cross reactions
         embed = discord.Embed(
             title=f'Invitation to join team **{team_name}** as a sub',
@@ -294,6 +297,7 @@ class TeamModule(commands.Cog):
                         f'React with 🟢 to accept the invitation or 🔴 to decline.',
             color=16773632
         )
+        embed.set_footer(text="The Swarm", icon_url="https://cdn.discordapp.com/attachments/1058010972138254348/1058012219390046288/IMG_0038.png")
         message = await ctx.send(embed=embed)
         await message.add_reaction("🟢")
         await message.add_reaction("🔴")
@@ -335,12 +339,13 @@ class TeamModule(commands.Cog):
 
         # Create an embed to display the free agents
         embed = discord.Embed(title="Free Agents", color=16773632)
+        embed.set_footer(text="The Swarm", icon_url="https://cdn.discordapp.com/attachments/1058010972138254348/1058012219390046288/IMG_0038.png")
 
         # Add a field for each free agent
         for fa_id, data in free_agents.items():
             fa = self.bot.get_user(int(fa_id))
             name = fa.display_name + "#" + fa.discriminator
-            embed.add_field(name=name, value=f"MMR: {data['mmr']}", inline=False)
+            embed.add_field(name=name, value=f"MMR: {data['mmr']}", inline=True)
 
         await ctx.send(embed=embed)
 
@@ -355,9 +360,10 @@ class TeamModule(commands.Cog):
             # Create an embed with the player's information
             embed = discord.Embed(title=player.display_name, color=16773632)
             embed.set_thumbnail(url=player.avatar_url)
+            embed.set_footer(text="The Swarm", icon_url="https://cdn.discordapp.com/attachments/1058010972138254348/1058012219390046288/IMG_0038.png")
             link = free_agents[f"{player.id}"]["tracker"]
             embed.add_field(name="Tracker", value=f"[Click here]({link})", inline=False)
-            embed.add_field(name="MMR", value=free_agents[f"{player.id}"]["mmr"], inline=False)
+            embed.add_field(name="Salary", value=free_agents[f"{player.id}"]["mmr"], inline=False)
             embed.add_field(name="Team", value="Free Agent", inline=False)
             embed.add_field(name="In-game Name", value=free_agents[f"{player.id}"]["IGN"], inline=False)
 
@@ -370,9 +376,10 @@ class TeamModule(commands.Cog):
                 # Create an embed with the player's information
                 embed = discord.Embed(title=player.display_name, color=16773632)
                 embed.set_thumbnail(url=player.avatar_url)
+                embed.set_footer(text="The Swarm", icon_url="https://cdn.discordapp.com/attachments/1058010972138254348/1058012219390046288/IMG_0038.png")
                 link = team["players"][f"{player.id}"]["tracker"]
                 embed.add_field(name="Tracker", value=f"[Click here]({link})", inline=False)
-                embed.add_field(name="MMR", value=team["players"][f"{player.id}"]["mmr"], inline=False)
+                embed.add_field(name="Salary", value=team["players"][f"{player.id}"]["mmr"], inline=False)
                 embed.add_field(name="Team", value=t_name, inline=False)
                 embed.add_field(name="Position", value="Player", inline=False)
                 embed.add_field(name="In-game Name", value=team["players"][f"{player.id}"]["IGN"], inline=False)
@@ -385,9 +392,10 @@ class TeamModule(commands.Cog):
                 # Create an embed with the player's information
                 embed = discord.Embed(title=player.display_name, color=16773632)
                 embed.set_thumbnail(url=player.avatar_url)
+                embed.set_footer(text="The Swarm", icon_url="https://cdn.discordapp.com/attachments/1058010972138254348/1058012219390046288/IMG_0038.png")
                 link = team['subplayers'][f'{player.id}']['tracker']
                 embed.add_field(name="Tracker", value=f"[Click here]({link})", inline=False)
-                embed.add_field(name="MMR", value=team["subplayers"][f"{player.id}"]["mmr"], inline=False)
+                embed.add_field(name="Salary", value=team["subplayers"][f"{player.id}"]["mmr"], inline=False)
                 embed.add_field(name="Team", value=t_name, inline=False)
                 embed.add_field(name="Position", value="Substitute", inline=False)
                 embed.add_field(name="In-game Name", value=team["subplayers"][f"{player.id}"]["IGN"], inline=False)
