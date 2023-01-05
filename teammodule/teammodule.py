@@ -31,6 +31,8 @@ class TeamModule(commands.Cog):
         # Give the general manager the role
         role = discord.utils.get(ctx.guild.roles, id=1028690403022606377)
         await general_manager.add_roles(role)
+        remrole = discord.utils.get(ctx.guild.roles, name="Free Agent")
+        await player.remove_roles(remrole)
 
         await ctx.send(f'Team "{team_name}" has been created with {general_manager.mention} as the general manager.')
 
@@ -205,11 +207,15 @@ class TeamModule(commands.Cog):
         for team_name, team in teams.items():
             if f"{ctx.author.id}" in team["subplayers"]:
                 del team["subplayers"][f"{ctx.author.id}"]
+                remrole = discord.utils.get(ctx.guild.roles, name=team_name)
+                await ctx.author.remove_roles(remrole)
                 await team_config.guild(ctx.guild).teams.set(teams)
                 player_kicked = True
                 break
             if f"{ctx.author.id}" in team["players"]:
                 del team["players"][f"{ctx.author.id}"]
+                remrole = discord.utils.get(ctx.guild.roles, name=team_name)
+                await ctx.author.remove_roles(remrole)
                 await team_config.guild(ctx.guild).teams.set(teams)
                 player_kicked = True
                 break
@@ -227,12 +233,16 @@ class TeamModule(commands.Cog):
             if ctx.author.id == team["GM"]:
                 if f"{player.id}" in team["players"]:
                     del team["players"][f"{player.id}"]
+                    remrole = discord.utils.get(ctx.guild.roles, name=team_name)
+                    await ctx.author.remove_roles(remrole)
                     await team_config.guild(ctx.guild).teams.set(teams)
                     player_kicked = True
                     break
                 if f"{player.id}" in team["subplayers"]:
                     # Remove the player from the team
                     del team["subplayers"][f"{player.id}"]
+                    remrole = discord.utils.get(ctx.guild.roles, name=team_name)
+                    await ctx.author.remove_roles(remrole)
                     await team_config.guild(ctx.guild).teams.set(teams)
                     player_kicked = True
                     break
