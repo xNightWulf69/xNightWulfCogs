@@ -380,7 +380,7 @@ class TeamModule(commands.Cog):
             if f"{player.id}" in team["subplayers"]:
                 # Create an embed with the player's information
                 embed = discord.Embed(title=player.display_name, color=16773632)
-                embed.add_field(name="Tracker", value="Click here"(team["subplayers"][f"{player.id}"]["tracker"]), inline=False)
+                embed.add_field(name="Tracker", value="Click here(team["subplayers"][f"{player.id}"]["tracker"])", inline=False)
                 embed.add_field(name="MMR", value=team["subplayers"][f"{player.id}"]["mmr"], inline=False)
                 embed.add_field(name="Team", value=t_name, inline=False)
                 embed.add_field(name="Position", value="Sub", inline=False)
