@@ -31,6 +31,8 @@ class TeamModule(commands.Cog):
         # Give the general manager the role
         role = discord.utils.get(ctx.guild.roles, id=1028690403022606377)
         await general_manager.add_roles(role)
+        teamrole = discord.utils.get(ctx.guild.roles, name=team_name)
+        await general_manager.add_roles(teamrole)
         remrole = discord.utils.get(ctx.guild.roles, name="Free Agent")
         await general_manager.remove_roles(remrole)
 
