@@ -1,7 +1,5 @@
 import asyncio
 import datetime
-import hashlib
-import json
 import logging
 from typing import Optional
 
@@ -21,19 +19,26 @@ FORCE_POST_WEEKDAY = 0  # Monday (datetime.weekday(): Monday = 0)
 FORCE_POST_HOUR_UTC = 4
 MAX_SEGMENTS_SHOWN = 8
 TWITCH_PURPLE = 0x9146FF
+DEFAULT_EVENT_DURATION_SECONDS = 3600
 
 
 class TwitchSchedule(commands.Cog):
     """
     Watch a Twitch channel's stream schedule and post it to a Discord channel
-    as a formatted embed whenever it changes.
+    as a formatted embed showing the current Monday to Sunday week.
 
-    Checks every 5 minutes for edits. If nothing has changed all week, it
-    force-posts a fresh copy of the schedule every Monday around 4:00 UTC
-    so the channel never goes stale.
+    A repost only happens when the streamer makes a genuine edit (title,
+    time, category, added/removed/canceled stream). The normal day to day
+    rolling forward of the schedule (a stream airs and drops off the list)
+    is not treated as an edit. If nothing changes all week, a fresh copy is
+    still force-posted every Monday around 04:00 UTC so the channel does
+    not go stale.
+
+    Optionally, a Discord Scheduled Event is created for each stream in the
+    current week and kept in sync with the Twitch schedule.
     """
 
-    __version__ = "1.0.0"
+    __version__ = "2.0.0"
     __author__ = "Custom"
 
     def __init__(self, bot: Red):
@@ -47,8 +52,10 @@ class TwitchSchedule(commands.Cog):
             "display_name": None,
             "profile_image_url": None,
             "channel_id": None,
-            "last_schedule_hash": None,
+            "last_fingerprint": {},
             "last_forced_iso_week": None,
+            "create_events": True,
+            "event_ids": {},
         }
         self.config.register_guild(**default_guild)
 
@@ -170,29 +177,16 @@ class TwitchSchedule(commands.Cog):
 
         return data.get("data", {"segments": [], "vacation": None})
 
-    @staticmethod
-    def _hash_schedule(schedule: dict) -> str:
-        segments = schedule.get("segments") or []
-        canonical = []
-        for seg in sorted(segments, key=lambda s: s.get("start_time", "")):
-            category = seg.get("category") or {}
-            canonical.append(
-                {
-                    "id": seg.get("id"),
-                    "start_time": seg.get("start_time"),
-                    "end_time": seg.get("end_time"),
-                    "title": seg.get("title"),
-                    "category_id": category.get("id"),
-                    "is_recurring": seg.get("is_recurring"),
-                    "canceled_until": seg.get("canceled_until"),
-                }
-            )
-        vacation = schedule.get("vacation")
-        payload = json.dumps({"segments": canonical, "vacation": vacation}, sort_keys=True)
-        return hashlib.sha256(payload.encode("utf-8")).hexdigest()
-
     # ---------------------------------------------------------------------
-    # Embed building
+    # Edit detection
+    #
+    # Twitch's schedule endpoint only ever returns future occurrences. Once
+    # a stream airs it disappears from the list, and a recurring stream's
+    # "next" occurrence quietly rolls forward to next week with the same
+    # id. Naively comparing raw API responses treats that normal rolling
+    # forward as an edit. To avoid that, recurring segments are fingerprinted
+    # by weekday and time of day (which stay constant week to week) rather
+    # than by absolute date, so only a genuine change registers as an edit.
     # ---------------------------------------------------------------------
 
     @staticmethod
@@ -206,16 +200,126 @@ class TwitchSchedule(commands.Cog):
         except ValueError:
             return None
 
-    def _build_embed(self, conf: dict, schedule: dict) -> discord.Embed:
+    def _build_fingerprint(self, schedule: dict) -> dict:
+        segments = schedule.get("segments") or []
+        fingerprint = {}
+
+        for seg in segments:
+            seg_id = seg.get("id")
+            if not seg_id:
+                continue
+            start_unix = self._parse_unix(seg.get("start_time"))
+            if start_unix is None:
+                continue
+            end_unix = self._parse_unix(seg.get("end_time"))
+
+            category = seg.get("category") or {}
+            title = seg.get("title")
+            category_id = category.get("id")
+            is_recurring = bool(seg.get("is_recurring"))
+            canceled_until = seg.get("canceled_until")
+
+            if is_recurring:
+                start_dt = datetime.datetime.fromtimestamp(start_unix, tz=datetime.timezone.utc)
+                duration = (end_unix - start_unix) if end_unix else None
+                data = {
+                    "title": title,
+                    "category_id": category_id,
+                    "weekday": start_dt.weekday(),
+                    "time_of_day": start_dt.strftime("%H:%M"),
+                    "duration": duration,
+                    "canceled_until": canceled_until,
+                    "is_one_off": False,
+                }
+            else:
+                # One off streams are unique instances. Once their start
+                # time has passed they naturally vanish from the API; that
+                # is expected and is handled in _fingerprints_differ, not
+                # treated as an edit.
+                data = {
+                    "title": title,
+                    "category_id": category_id,
+                    "start_time": start_unix,
+                    "end_time": end_unix,
+                    "canceled_until": canceled_until,
+                    "is_one_off": True,
+                    "start_time_when_seen": start_unix,
+                }
+
+            # If the same id appears more than once (multiple future
+            # occurrences of a recurring segment), keep the earliest one as
+            # the canonical definition.
+            existing = fingerprint.get(seg_id)
+            if existing is None or start_unix < existing.get("_start_unix", start_unix):
+                data["_start_unix"] = start_unix
+                fingerprint[seg_id] = data
+
+        return fingerprint
+
+    @staticmethod
+    def _fingerprints_differ(old_fp: dict, new_fp: dict) -> bool:
+        now_unix = int(datetime.datetime.now(datetime.timezone.utc).timestamp())
+
+        def _clean(data: dict) -> dict:
+            return {k: v for k, v in data.items() if k != "_start_unix"}
+
+        filtered_old = {}
+        for seg_id, data in old_fp.items():
+            if data.get("is_one_off") and data.get("start_time_when_seen", 0) <= now_unix:
+                # Expected to have already aired and rolled off the list.
+                continue
+            filtered_old[seg_id] = _clean(data)
+
+        new_clean = {seg_id: _clean(data) for seg_id, data in new_fp.items()}
+
+        return filtered_old != new_clean
+
+    # ---------------------------------------------------------------------
+    # Week windowing
+    # ---------------------------------------------------------------------
+
+    @staticmethod
+    def _get_week_bounds(now: datetime.datetime):
+        monday_start = (now - datetime.timedelta(days=now.weekday())).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
+        next_monday = monday_start + datetime.timedelta(days=7)
+        return monday_start, next_monday
+
+    def _get_week_segments(self, schedule: dict, now: datetime.datetime):
+        monday_start, next_monday = self._get_week_bounds(now)
+        monday_unix = int(monday_start.timestamp())
+        next_monday_unix = int(next_monday.timestamp())
+
+        segments = schedule.get("segments") or []
+        week_segments = []
+        for seg in segments:
+            start_unix = self._parse_unix(seg.get("start_time"))
+            if start_unix is None:
+                continue
+            if monday_unix <= start_unix < next_monday_unix:
+                week_segments.append(seg)
+
+        week_segments.sort(key=lambda s: s.get("start_time", ""))
+        return week_segments, monday_unix, next_monday_unix
+
+    # ---------------------------------------------------------------------
+    # Embed building
+    # ---------------------------------------------------------------------
+
+    def _build_embed(self, conf: dict, schedule: dict, now: datetime.datetime) -> discord.Embed:
         display_name = conf.get("display_name") or conf.get("twitch_username")
         login = conf.get("twitch_username")
         profile_image = conf.get("profile_image_url")
 
+        week_segments, monday_unix, next_monday_unix = self._get_week_segments(schedule, now)
+        sunday_unix = next_monday_unix - 1
+
         embed = discord.Embed(
-            title="Weekly Stream Schedule",
+            title="This Week's Stream Schedule",
             url=f"https://twitch.tv/{login}/schedule" if login else None,
             color=TWITCH_PURPLE,
-            timestamp=datetime.datetime.now(datetime.timezone.utc),
+            timestamp=now,
         )
         embed.set_author(
             name=display_name,
@@ -225,25 +329,29 @@ class TwitchSchedule(commands.Cog):
         if profile_image:
             embed.set_thumbnail(url=profile_image)
 
+        description_lines = [f"<t:{monday_unix}:D> - <t:{sunday_unix}:D>"]
+
         vacation = schedule.get("vacation")
         if vacation:
             start_unix = self._parse_unix(vacation.get("start_time"))
             end_unix = self._parse_unix(vacation.get("end_time"))
             if start_unix and end_unix:
-                embed.description = (
+                description_lines.append(
                     f"On a break from <t:{start_unix}:D> until <t:{end_unix}:D>."
                 )
             else:
-                embed.description = "This channel is currently on a scheduled break."
+                description_lines.append("This channel is currently on a scheduled break.")
 
-        segments = schedule.get("segments") or []
-        segments = sorted(segments, key=lambda s: s.get("start_time", ""))
+        embed.description = "\n".join(description_lines)
 
-        if not segments:
-            if not embed.description:
-                embed.description = "No upcoming streams are scheduled right now."
+        if not week_segments:
+            embed.add_field(
+                name="\u200b",
+                value="No streams scheduled for the rest of this week.",
+                inline=False,
+            )
         else:
-            for seg in segments[:MAX_SEGMENTS_SHOWN]:
+            for seg in week_segments[:MAX_SEGMENTS_SHOWN]:
                 title = seg.get("title") or "Untitled Stream"
                 start_unix = self._parse_unix(seg.get("start_time"))
                 category = seg.get("category") or {}
@@ -262,16 +370,132 @@ class TwitchSchedule(commands.Cog):
                 field_name = f"{emoji} {title}"[:256]
                 embed.add_field(name=field_name, value="\n".join(lines)[:1024], inline=False)
 
-            if len(segments) > MAX_SEGMENTS_SHOWN:
-                remaining = len(segments) - MAX_SEGMENTS_SHOWN
+            if len(week_segments) > MAX_SEGMENTS_SHOWN:
+                remaining = len(week_segments) - MAX_SEGMENTS_SHOWN
                 embed.add_field(
                     name="\u200b",
-                    value=f"...and {remaining} more upcoming stream(s). Full schedule linked above.",
+                    value=f"...and {remaining} more stream(s) this week. Full schedule linked above.",
                     inline=False,
                 )
 
         embed.set_footer(text="Times shown above adjust automatically to your local timezone")
         return embed
+
+    # ---------------------------------------------------------------------
+    # Discord Scheduled Events
+    # ---------------------------------------------------------------------
+
+    async def _sync_events(self, guild: discord.Guild, conf: dict, week_segments: list, now: datetime.datetime):
+        event_ids = dict(conf.get("event_ids") or {})
+        login = conf.get("twitch_username")
+        active_ids = set()
+
+        for seg in week_segments:
+            seg_id = seg.get("id")
+            if not seg_id:
+                continue
+
+            start_unix = self._parse_unix(seg.get("start_time"))
+            if not start_unix or start_unix <= int(now.timestamp()):
+                # Discord will not allow scheduling events in the past.
+                continue
+
+            end_unix = self._parse_unix(seg.get("end_time"))
+            if not end_unix or end_unix <= start_unix:
+                end_unix = start_unix + DEFAULT_EVENT_DURATION_SECONDS
+
+            start_dt = datetime.datetime.fromtimestamp(start_unix, tz=datetime.timezone.utc)
+            end_dt = datetime.datetime.fromtimestamp(end_unix, tz=datetime.timezone.utc)
+
+            title = (seg.get("title") or "Stream")[:100]
+            category_name = (seg.get("category") or {}).get("name") or "Not set"
+            twitch_url = f"https://twitch.tv/{login}" if login else "https://twitch.tv"
+            description = f"Category: {category_name}\nWatch live at {twitch_url}"[:1000]
+            location = (f"twitch.tv/{login}" if login else "Twitch")[:100]
+
+            event_obj = None
+            existing_id = event_ids.get(seg_id)
+            if existing_id:
+                try:
+                    event_obj = await guild.fetch_scheduled_event(existing_id)
+                except discord.NotFound:
+                    event_obj = None
+                except discord.HTTPException:
+                    log.exception("Failed to fetch scheduled event %s", existing_id)
+                    event_obj = None
+
+                if event_obj is not None and event_obj.status not in (
+                    discord.EventStatus.scheduled,
+                    discord.EventStatus.active,
+                ):
+                    # Already completed or canceled on Discord's side; a
+                    # fresh event needs to be created for the new occurrence.
+                    event_obj = None
+
+            if event_obj is not None:
+                needs_update = (
+                    event_obj.name != title
+                    or event_obj.start_time != start_dt
+                    or event_obj.end_time != end_dt
+                )
+                if needs_update:
+                    try:
+                        await event_obj.edit(
+                            name=title,
+                            description=description,
+                            start_time=start_dt,
+                            end_time=end_dt,
+                            location=location,
+                        )
+                    except discord.HTTPException:
+                        log.exception("Failed to update scheduled event for segment %s", seg_id)
+                event_ids[seg_id] = event_obj.id
+                active_ids.add(seg_id)
+                continue
+
+            try:
+                new_event = await guild.create_scheduled_event(
+                    name=title,
+                    description=description,
+                    start_time=start_dt,
+                    end_time=end_dt,
+                    entity_type=discord.EntityType.external,
+                    privacy_level=discord.PrivacyLevel.guild_only,
+                    location=location,
+                )
+            except discord.HTTPException:
+                log.exception("Failed to create scheduled event for segment %s", seg_id)
+                continue
+
+            event_ids[seg_id] = new_event.id
+            active_ids.add(seg_id)
+
+        # Clean up events for segments that were canceled or removed before
+        # they aired. Segments that simply already aired are left alone;
+        # Discord marks those completed on its own.
+        stale_ids = [seg_id for seg_id in event_ids if seg_id not in active_ids]
+        for seg_id in stale_ids:
+            discord_event_id = event_ids.pop(seg_id, None)
+            if not discord_event_id:
+                continue
+            try:
+                event_obj = await guild.fetch_scheduled_event(discord_event_id)
+            except discord.NotFound:
+                continue
+            except discord.HTTPException:
+                log.exception("Failed to fetch scheduled event %s for cleanup", discord_event_id)
+                continue
+
+            if (
+                event_obj.status in (discord.EventStatus.scheduled, discord.EventStatus.active)
+                and event_obj.start_time > now
+            ):
+                try:
+                    await event_obj.delete()
+                except discord.HTTPException:
+                    log.exception("Failed to delete scheduled event %s", discord_event_id)
+
+        await self.config.guild(guild).event_ids.set(event_ids)
 
     # ---------------------------------------------------------------------
     # Background loop
@@ -310,19 +534,20 @@ class TwitchSchedule(commands.Cog):
         if schedule is None:
             return
 
-        new_hash = self._hash_schedule(schedule)
-        old_hash = conf.get("last_schedule_hash")
-
         now = datetime.datetime.now(datetime.timezone.utc)
+
+        new_fp = self._build_fingerprint(schedule)
+        old_fp = conf.get("last_fingerprint") or {}
+        edited = self._fingerprints_differ(old_fp, new_fp)
+
         iso_year, iso_week, _ = now.isocalendar()
         current_iso_week = f"{iso_year}-W{iso_week}"
         last_forced_iso_week = conf.get("last_forced_iso_week")
 
         should_post = False
-
         if force:
             should_post = True
-        elif new_hash != old_hash:
+        elif edited:
             should_post = True
         elif (
             now.weekday() == FORCE_POST_WEEKDAY
@@ -331,17 +556,27 @@ class TwitchSchedule(commands.Cog):
         ):
             should_post = True
 
+        # Keep the stored fingerprint fresh regardless of whether a post
+        # happens, so expected natural changes (like a one off stream
+        # airing and rolling off the list) do not linger.
+        await guild_group.last_fingerprint.set(new_fp)
+
         if not should_post:
             return
 
-        embed = self._build_embed(conf, schedule)
+        embed = self._build_embed(conf, schedule, now)
         try:
             await channel.send(embed=embed)
         except discord.HTTPException:
             log.exception("Failed to post schedule in guild %s", guild_id)
-            return
 
-        await guild_group.last_schedule_hash.set(new_hash)
+        if conf.get("create_events", True):
+            week_segments, _, _ = self._get_week_segments(schedule, now)
+            try:
+                await self._sync_events(guild, conf, week_segments, now)
+            except Exception:
+                log.exception("Failed to sync scheduled events for guild %s", guild_id)
+
         if now.weekday() == FORCE_POST_WEEKDAY and now.hour == FORCE_POST_HOUR_UTC:
             await guild_group.last_forced_iso_week.set(current_iso_week)
 
@@ -383,7 +618,7 @@ class TwitchSchedule(commands.Cog):
         await guild_group.broadcaster_id.set(info["id"])
         await guild_group.display_name.set(info["display_name"])
         await guild_group.profile_image_url.set(info["profile_image_url"])
-        await guild_group.last_schedule_hash.set(None)
+        await guild_group.last_fingerprint.set({})
         await guild_group.last_forced_iso_week.set(None)
 
         await ctx.send(
@@ -419,8 +654,25 @@ class TwitchSchedule(commands.Cog):
     @commands.command()
     @commands.guild_only()
     @commands.admin_or_permissions(manage_guild=True)
+    async def scheduleevents(self, ctx: commands.Context, enabled: bool):
+        """
+        Toggle automatic Discord Scheduled Events for this week's streams.
+
+        I need the Manage Events permission for this to work.
+
+        Example:
+        [p]scheduleevents true
+        [p]scheduleevents false
+        """
+        await self.config.guild(ctx.guild).create_events.set(enabled)
+        state = "enabled" if enabled else "disabled"
+        await ctx.send(f"Automatic Discord scheduled events are now {state}.")
+
+    @commands.command()
+    @commands.guild_only()
+    @commands.admin_or_permissions(manage_guild=True)
     async def scheduleforce(self, ctx: commands.Context):
-        """Force an immediate repost of the current schedule."""
+        """Force an immediate repost of the current week's schedule."""
         conf = await self.config.guild(ctx.guild).all()
         if not conf.get("twitch_username") or not conf.get("channel_id"):
             await ctx.send("Please set both `scheduletwitch` and `schedulechannel` first.")
@@ -442,9 +694,12 @@ class TwitchSchedule(commands.Cog):
             channel = ctx.guild.get_channel(conf["channel_id"])
         channel_text = channel.mention if channel else "Not set"
 
+        events_state = "Enabled" if conf.get("create_events", True) else "Disabled"
+
         embed = discord.Embed(title="Twitch Schedule Settings", color=await ctx.embed_color())
         embed.add_field(name="Twitch Channel", value=display_name, inline=False)
         embed.add_field(name="Post Channel", value=channel_text, inline=False)
+        embed.add_field(name="Discord Scheduled Events", value=events_state, inline=False)
         embed.set_footer(
             text=(
                 f"Checking for changes every {CHECK_INTERVAL_MINUTES} minutes, "
