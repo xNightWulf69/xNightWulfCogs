@@ -27,7 +27,7 @@ class TwitchClips(commands.Cog):
     Twitch's "Get Clips" endpoint, which is a separate data type from videos/streams.
     """
 
-    __version__ = "1.0.0"
+    __version__ = "1.1.0"
     __author__ = "Custom"
 
     def __init__(self, bot: Red):
@@ -241,6 +241,14 @@ class TwitchClips(commands.Cog):
     # Commands
     # ---------------------------------------------------------------------
 
+    async def _clear_guild_watch(self, guild: discord.Guild):
+        """Stop watching whatever Twitch channel is set for this server."""
+        guild_group = self.config.guild(guild)
+        await guild_group.twitch_username.set(None)
+        await guild_group.broadcaster_id.set(None)
+        await guild_group.last_check.set(None)
+        await guild_group.posted_clip_ids.set([])
+
     @commands.command()
     @commands.guild_only()
     @commands.admin_or_permissions(manage_guild=True)
@@ -248,12 +256,24 @@ class TwitchClips(commands.Cog):
         """
         Set the Twitch username to watch for new clips.
 
+        Running this again with the username currently being watched stops
+        watching it. Use `[p]clipremove` instead if you are not sure of the
+        exact username currently set.
+
         Example:
         [p]cliptwitch spookymochii
         """
         username = username.lstrip("@").strip()
         if not username:
             await ctx.send("Please provide a valid Twitch username.")
+            return
+
+        guild_group = self.config.guild(ctx.guild)
+        current_username = await guild_group.twitch_username()
+
+        if current_username and current_username.lower() == username.lower():
+            await self._clear_guild_watch(ctx.guild)
+            await ctx.send(f"Stopped watching **{current_username}** for new Twitch clips.")
             return
 
         async with ctx.typing():
@@ -270,7 +290,6 @@ class TwitchClips(commands.Cog):
             )
             return
 
-        guild_group = self.config.guild(ctx.guild)
         await guild_group.twitch_username.set(username)
         await guild_group.broadcaster_id.set(broadcaster_id)
 
@@ -281,6 +300,19 @@ class TwitchClips(commands.Cog):
         await guild_group.posted_clip_ids.set([])
 
         await ctx.send(f"Now watching **{username}** for new Twitch clips.")
+
+    @commands.command()
+    @commands.guild_only()
+    @commands.admin_or_permissions(manage_guild=True)
+    async def clipremove(self, ctx: commands.Context):
+        """Stop watching the current Twitch channel for new clips."""
+        current_username = await self.config.guild(ctx.guild).twitch_username()
+        if not current_username:
+            await ctx.send("I am not currently watching any Twitch channel for this server.")
+            return
+
+        await self._clear_guild_watch(ctx.guild)
+        await ctx.send(f"Stopped watching **{current_username}** for new Twitch clips.")
 
     @commands.command()
     @commands.guild_only()
