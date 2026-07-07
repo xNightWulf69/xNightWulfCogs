@@ -38,7 +38,7 @@ class TwitchSchedule(commands.Cog):
     current week and kept in sync with the Twitch schedule.
     """
 
-    __version__ = "2.0.0"
+    __version__ = "2.1.0"
     __author__ = "Custom"
 
     def __init__(self, bot: Red):
@@ -62,12 +62,20 @@ class TwitchSchedule(commands.Cog):
         self._app_token: Optional[str] = None
         self._app_token_expiry: float = 0.0
         self._lock = asyncio.Lock()
+        self._guild_locks: dict = {}
 
         self.schedule_check_loop.start()
 
     def cog_unload(self):
         self.schedule_check_loop.cancel()
         asyncio.create_task(self.session.close())
+
+    def _get_guild_lock(self, guild_id: int) -> asyncio.Lock:
+        lock = self._guild_locks.get(guild_id)
+        if lock is None:
+            lock = asyncio.Lock()
+            self._guild_locks[guild_id] = lock
+        return lock
 
     # ---------------------------------------------------------------------
     # Twitch API helpers
@@ -385,10 +393,92 @@ class TwitchSchedule(commands.Cog):
     # Discord Scheduled Events
     # ---------------------------------------------------------------------
 
+    async def _dedupe_existing_events(self, guild: discord.Guild, event_ids: dict):
+        """
+        Find and merge duplicate scheduled events (same name and start time)
+        that may exist from a past bug, a concurrent run, or the cog having
+        briefly been loaded twice. Keeps the event already referenced in our
+        mapping when possible, otherwise keeps the oldest (lowest id) one.
+        Returns the corrected event_ids mapping and how many were removed.
+        """
+        try:
+            events = await guild.fetch_scheduled_events()
+        except discord.HTTPException:
+            log.exception("Failed to fetch scheduled events for dedupe in guild %s", guild.id)
+            return event_ids, 0
+
+        active_events = [
+            e
+            for e in events
+            if e.status in (discord.EventStatus.scheduled, discord.EventStatus.active)
+        ]
+
+        groups: dict = {}
+        for e in active_events:
+            key = (e.name, e.start_time.replace(second=0, microsecond=0))
+            groups.setdefault(key, []).append(e)
+
+        tracked_ids = set(event_ids.values())
+        id_remap = {}
+        removed_count = 0
+
+        for group in groups.values():
+            if len(group) <= 1:
+                continue
+
+            survivor = None
+            for e in group:
+                if e.id in tracked_ids:
+                    survivor = e
+                    break
+            if survivor is None:
+                survivor = min(group, key=lambda e: e.id)
+
+            for e in group:
+                if e.id == survivor.id:
+                    continue
+                try:
+                    await e.delete()
+                    removed_count += 1
+                except discord.HTTPException:
+                    log.exception("Failed to delete duplicate scheduled event %s", e.id)
+                    continue
+                id_remap[e.id] = survivor.id
+
+        if id_remap:
+            for seg_id, discord_id in list(event_ids.items()):
+                if discord_id in id_remap:
+                    event_ids[seg_id] = id_remap[discord_id]
+
+        if removed_count:
+            log.info(
+                "Removed %s duplicate scheduled event(s) in guild %s", removed_count, guild.id
+            )
+
+        return event_ids, removed_count
+
     async def _sync_events(self, guild: discord.Guild, conf: dict, week_segments: list, now: datetime.datetime):
         event_ids = dict(conf.get("event_ids") or {})
         login = conf.get("twitch_username")
         active_ids = set()
+
+        # Self heal first: merge away any duplicates that already exist
+        # before deciding what still needs to be created or updated.
+        event_ids, _ = await self._dedupe_existing_events(guild, event_ids)
+
+        # Guard against the same Twitch segment id appearing more than once
+        # in this week's window (for example a daily recurring segment can
+        # produce several occurrences that share one id).
+        seen_ids = set()
+        deduped_segments = []
+        for seg in week_segments:
+            seg_id = seg.get("id")
+            if seg_id and seg_id in seen_ids:
+                continue
+            if seg_id:
+                seen_ids.add(seg_id)
+            deduped_segments.append(seg)
+        week_segments = deduped_segments
 
         for seg in week_segments:
             seg_id = seg.get("id")
@@ -515,6 +605,15 @@ class TwitchSchedule(commands.Cog):
         await self.bot.wait_until_red_ready()
 
     async def _check_guild(self, guild_id: int, conf: dict, force: bool = False):
+        # Serialize per guild so a manual command (scheduleforce,
+        # scheduletwitch) can never run at the same time as the automatic
+        # loop tick for the same server. Running twice at once was the
+        # cause of duplicate Discord Scheduled Events being created.
+        lock = self._get_guild_lock(guild_id)
+        async with lock:
+            await self._check_guild_locked(guild_id, conf, force=force)
+
+    async def _check_guild_locked(self, guild_id: int, conf: dict, force: bool = False):
         username = conf.get("twitch_username")
         channel_id = conf.get("channel_id")
         broadcaster_id = conf.get("broadcaster_id")
@@ -584,6 +683,43 @@ class TwitchSchedule(commands.Cog):
     # Commands
     # ---------------------------------------------------------------------
 
+    async def _clear_guild_watch(self, guild: discord.Guild):
+        """Stop watching whatever Twitch channel is set and remove any
+        Discord Scheduled Events that were created for it."""
+        guild_group = self.config.guild(guild)
+        conf = await guild_group.all()
+        event_ids = conf.get("event_ids") or {}
+
+        if event_ids:
+            lock = self._get_guild_lock(guild.id)
+            async with lock:
+                for discord_event_id in list(event_ids.values()):
+                    try:
+                        event_obj = await guild.fetch_scheduled_event(discord_event_id)
+                    except discord.NotFound:
+                        continue
+                    except discord.HTTPException:
+                        log.exception(
+                            "Failed to fetch scheduled event %s while clearing", discord_event_id
+                        )
+                        continue
+                    if event_obj.status in (discord.EventStatus.scheduled, discord.EventStatus.active):
+                        try:
+                            await event_obj.delete()
+                        except discord.HTTPException:
+                            log.exception(
+                                "Failed to delete scheduled event %s while clearing",
+                                discord_event_id,
+                            )
+
+        await guild_group.twitch_username.set(None)
+        await guild_group.broadcaster_id.set(None)
+        await guild_group.display_name.set(None)
+        await guild_group.profile_image_url.set(None)
+        await guild_group.last_fingerprint.set({})
+        await guild_group.last_forced_iso_week.set(None)
+        await guild_group.event_ids.set({})
+
     @commands.command()
     @commands.guild_only()
     @commands.admin_or_permissions(manage_guild=True)
@@ -591,12 +727,26 @@ class TwitchSchedule(commands.Cog):
         """
         Set the Twitch username to watch for schedule updates.
 
+        Running this again with the username currently being watched stops
+        watching it (and removes any Discord Scheduled Events created for
+        it). Use `[p]scheduleremove` instead if you are not sure of the
+        exact username currently set.
+
         Example:
         [p]scheduletwitch spookymochii
         """
         username = username.lstrip("@").strip()
         if not username:
             await ctx.send("Please provide a valid Twitch username.")
+            return
+
+        guild_group = self.config.guild(ctx.guild)
+        current_username = await guild_group.twitch_username()
+
+        if current_username and current_username.lower() == username.lower():
+            async with ctx.typing():
+                await self._clear_guild_watch(ctx.guild)
+            await ctx.send(f"Stopped watching **{current_username}**'s schedule.")
             return
 
         async with ctx.typing():
@@ -613,7 +763,11 @@ class TwitchSchedule(commands.Cog):
             )
             return
 
-        guild_group = self.config.guild(ctx.guild)
+        if current_username:
+            # Switching to a different channel: clear out the old one's
+            # events first so nothing gets left orphaned.
+            await self._clear_guild_watch(ctx.guild)
+
         await guild_group.twitch_username.set(info["login"])
         await guild_group.broadcaster_id.set(info["id"])
         await guild_group.display_name.set(info["display_name"])
@@ -630,6 +784,20 @@ class TwitchSchedule(commands.Cog):
         # waiting for the next 5 minute loop tick.
         conf = await guild_group.all()
         await self._check_guild(ctx.guild.id, conf, force=True)
+
+    @commands.command()
+    @commands.guild_only()
+    @commands.admin_or_permissions(manage_guild=True)
+    async def scheduleremove(self, ctx: commands.Context):
+        """Stop watching the current Twitch schedule and remove any Discord Scheduled Events for it."""
+        current_username = await self.config.guild(ctx.guild).twitch_username()
+        if not current_username:
+            await ctx.send("I am not currently watching any Twitch schedule for this server.")
+            return
+
+        async with ctx.typing():
+            await self._clear_guild_watch(ctx.guild)
+        await ctx.send(f"Stopped watching **{current_username}**'s schedule.")
 
     @commands.command()
     @commands.guild_only()
@@ -681,6 +849,27 @@ class TwitchSchedule(commands.Cog):
         async with ctx.typing():
             await self._check_guild(ctx.guild.id, conf, force=True)
         await ctx.send("Schedule reposted.")
+
+    @commands.command()
+    @commands.guild_only()
+    @commands.admin_or_permissions(manage_guild=True)
+    async def scheduleeventscleanup(self, ctx: commands.Context):
+        """
+        Find and merge any duplicate Discord Scheduled Events (same name and
+        start time) right now, without waiting for the next scheduled check.
+        """
+        conf = await self.config.guild(ctx.guild).all()
+        lock = self._get_guild_lock(ctx.guild.id)
+        async with lock:
+            async with ctx.typing():
+                event_ids = dict(conf.get("event_ids") or {})
+                event_ids, removed_count = await self._dedupe_existing_events(ctx.guild, event_ids)
+                await self.config.guild(ctx.guild).event_ids.set(event_ids)
+
+        if removed_count:
+            await ctx.send(f"Cleaned up {removed_count} duplicate scheduled event(s).")
+        else:
+            await ctx.send("No duplicate scheduled events found.")
 
     @commands.command()
     @commands.guild_only()
