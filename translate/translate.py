@@ -1,5 +1,5 @@
 import discord
-from redbot.core import commands, Config
+from redbot.core import commands
 from redbot.core.bot import Red
 
 from deep_translator import GoogleTranslator
@@ -11,7 +11,6 @@ class Translate(commands.Cog):
 
     def __init__(self, bot: Red):
         self.bot = bot
-        self.config = Config.get_conf(self, identifier=5832147392, force_registration=True)
 
     @commands.command(name="translate", aliases=["trans"])
     @commands.guild_only()
@@ -26,52 +25,91 @@ class Translate(commands.Cog):
             [p]translate Bonjour tout le monde
         """
 
-        # If no text was supplied, find the previous message.
+        # ---------------------------------------------------------
+        # Find the previous message if no text was supplied
+        # ---------------------------------------------------------
+
         if not text:
-            messages = []
+            message = None
 
-            async for message in ctx.channel.history(limit=10):
-                # Skip the command message itself and bot messages.
-                if message.id == ctx.message.id:
-                    continue
+            try:
+                async for previous in ctx.channel.history(limit=20):
+                    # Don't translate the command itself
+                    if previous.id == ctx.message.id:
+                        continue
 
-                if message.author.bot:
-                    continue
+                    # Ignore bot messages
+                    if previous.author.bot:
+                        continue
 
-                # Ignore empty messages.
-                if not message.content.strip():
-                    continue
+                    # Ignore empty messages
+                    if not previous.content.strip():
+                        continue
 
-                messages.append(message)
+                    message = previous
+                    break
 
-            if not messages:
-                await ctx.send("❌ I couldn't find a previous message to translate.")
+            except discord.Forbidden:
+                await ctx.send(
+                    "❌ I don't have permission to read message history "
+                    "in this channel."
+                )
                 return
 
-            message = messages[0]
-            text = message.content
+            except discord.HTTPException as e:
+                await ctx.send(
+                    f"❌ I couldn't read the message history.\n"
+                    f"```{type(e).__name__}: {e}```"
+                )
+                return
 
+            if message is None:
+                await ctx.send(
+                    "❌ I couldn't find a previous message to translate."
+                )
+                return
+
+            text = message.content
             source_display = message.author.display_name
 
         else:
             source_display = None
 
-        # Don't try to translate ridiculously large messages.
+        # ---------------------------------------------------------
+        # Character limit
+        # ---------------------------------------------------------
+
         if len(text) > 5000:
-            await ctx.send("❌ That text is too long to translate. Please keep it under 5,000 characters.")
+            await ctx.send(
+                "❌ That text is too long to translate. "
+                "Please keep it under 5,000 characters."
+            )
             return
 
-        # Detect language.
+        # ---------------------------------------------------------
+        # Detect language
+        # ---------------------------------------------------------
+
         try:
             detected_language = detect(text)
+
         except LangDetectException:
-            await ctx.send("❌ I couldn't detect the language of that text.")
-            return
-        except Exception:
-            await ctx.send("❌ Something went wrong while detecting the language.")
+            await ctx.send(
+                "❌ I couldn't detect the language of that text."
+            )
             return
 
-        # Convert common language codes to readable names.
+        except Exception as e:
+            await ctx.send(
+                f"❌ Language detection failed.\n"
+                f"```{type(e).__name__}: {e}```"
+            )
+            return
+
+        # ---------------------------------------------------------
+        # Language names
+        # ---------------------------------------------------------
+
         language_names = {
             "af": "Afrikaans",
             "ar": "Arabic",
@@ -136,64 +174,99 @@ class Translate(commands.Cog):
 
         language_name = language_names.get(
             detected_language,
-            detected_language.upper()
+            detected_language.upper(),
         )
 
-        # Already English.
+        # ---------------------------------------------------------
+        # Already English
+        # ---------------------------------------------------------
+
         if detected_language == "en":
-            await ctx.send(
-                f"🇬🇧 **Detected language:** English\n\n"
-                f"> {text}"
+            embed = discord.Embed(
+                title="🇬🇧 Translation",
+                description=(
+                    f"**Detected Language:** English\n\n"
+                    f"> {text[:4000]}"
+                ),
+                color=discord.Color.green(),
             )
+
+            if source_display:
+                embed.set_footer(
+                    text=f"Message from {source_display}"
+                )
+
+            await ctx.send(embed=embed)
             return
 
-        # Translate.
+        # ---------------------------------------------------------
+        # Translate using GoogleTranslator
+        # ---------------------------------------------------------
+
         try:
             translator = GoogleTranslator(
                 source="auto",
-                target="en"
+                target="en",
             )
 
             translated = translator.translate(text)
 
         except Exception as e:
             await ctx.send(
-                "❌ I couldn't translate that message right now. "
-                "The translation service may be unavailable."
+                "❌ **Translation failed.**\n"
+                "The translation service returned an error:\n"
+                f"```{type(e).__name__}: {e}```"
             )
             return
 
-        # Build the response.
+        # ---------------------------------------------------------
+        # Make sure we actually received a translation
+        # ---------------------------------------------------------
+
+        if not translated:
+            await ctx.send(
+                "❌ The translation service returned an empty response."
+            )
+            return
+
+        # ---------------------------------------------------------
+        # Create response embed
+        # ---------------------------------------------------------
+
         embed = discord.Embed(
             title="🌐 Translation",
-            color=discord.Color.blurple()
+            color=discord.Color.blurple(),
         )
 
         embed.add_field(
             name="Detected Language",
             value=language_name,
-            inline=True
+            inline=True,
         )
 
         embed.add_field(
             name="Translated To",
             value="🇬🇧 English",
-            inline=True
+            inline=True,
         )
+
+        # Discord embeds have a 4096 character description limit.
+        original_text = text[:1500]
+        translated_text = translated[:2000]
 
         if source_display:
             embed.description = (
                 f"**Original message from {source_display}:**\n"
-                f"> {text[:1000]}\n\n"
+                f"> {original_text}\n\n"
                 f"**English:**\n"
-                f"> {translated[:2000]}"
+                f"> {translated_text}"
             )
         else:
             embed.description = (
                 f"**Original:**\n"
-                f"> {text[:1000]}\n\n"
+                f"> {original_text}\n\n"
                 f"**English:**\n"
-                f"> {translated[:2000]}"
+                f"> {translated_text}"
             )
 
         embed.set_footer(
