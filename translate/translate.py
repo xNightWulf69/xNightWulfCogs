@@ -1,8 +1,12 @@
+import asyncio
+import json
+import urllib.parse
+import urllib.request
+
 import discord
 from redbot.core import commands
 from redbot.core.bot import Red
 
-from deep_translator import GoogleTranslator
 from langdetect import detect, LangDetectException
 
 
@@ -12,29 +16,91 @@ class Translate(commands.Cog):
     def __init__(self, bot: Red):
         self.bot = bot
 
+    # ---------------------------------------------------------
+    # MyMemory translation
+    # ---------------------------------------------------------
+
+    async def translate_text(self, text: str) -> str:
+        """Translate text to English using MyMemory."""
+
+        def request():
+            encoded_text = urllib.parse.quote(text)
+
+            url = (
+                "https://api.mymemory.translated.net/get"
+                f"?q={encoded_text}"
+                "&langpair=auto|en"
+            )
+
+            request = urllib.request.Request(
+                url,
+                headers={
+                    "User-Agent": "Mozilla/5.0",
+                    "Accept": "application/json",
+                },
+            )
+
+            with urllib.request.urlopen(request, timeout=15) as response:
+                data = json.loads(response.read().decode("utf-8"))
+
+            response_status = data.get("responseStatus")
+
+            if response_status != 200:
+                error_message = data.get(
+                    "responseDetails",
+                    "Unknown translation service error.",
+                )
+
+                raise RuntimeError(
+                    f"MyMemory error {response_status}: {error_message}"
+                )
+
+            translated = data.get("responseData", {}).get(
+                "translatedText"
+            )
+
+            if not translated:
+                raise RuntimeError(
+                    "The translation service returned no translation."
+                )
+
+            return translated
+
+        return await asyncio.to_thread(request)
+
+    # ---------------------------------------------------------
+    # Translate command
+    # ---------------------------------------------------------
+
     @commands.command(name="translate", aliases=["trans"])
     @commands.guild_only()
-    async def translate(self, ctx: commands.Context, *, text: str = None):
+    async def translate(
+        self,
+        ctx: commands.Context,
+        *,
+        text: str = None,
+    ):
         """
         Translate text to English.
 
-        Without text, translates the previous message in the channel.
+        Without text, translates the previous message.
 
         Examples:
             [p]translate
             [p]translate Bonjour tout le monde
         """
 
-        # ---------------------------------------------------------
-        # Find the previous message if no text was supplied
-        # ---------------------------------------------------------
+        # -----------------------------------------------------
+        # Find previous message
+        # -----------------------------------------------------
 
         if not text:
             message = None
 
             try:
                 async for previous in ctx.channel.history(limit=20):
-                    # Don't translate the command itself
+
+                    # Ignore the command message itself
                     if previous.id == ctx.message.id:
                         continue
 
@@ -58,7 +124,7 @@ class Translate(commands.Cog):
 
             except discord.HTTPException as e:
                 await ctx.send(
-                    f"❌ I couldn't read the message history.\n"
+                    "❌ I couldn't read the message history.\n"
                     f"```{type(e).__name__}: {e}```"
                 )
                 return
@@ -75,9 +141,9 @@ class Translate(commands.Cog):
         else:
             source_display = None
 
-        # ---------------------------------------------------------
+        # -----------------------------------------------------
         # Character limit
-        # ---------------------------------------------------------
+        # -----------------------------------------------------
 
         if len(text) > 5000:
             await ctx.send(
@@ -86,9 +152,9 @@ class Translate(commands.Cog):
             )
             return
 
-        # ---------------------------------------------------------
+        # -----------------------------------------------------
         # Detect language
-        # ---------------------------------------------------------
+        # -----------------------------------------------------
 
         try:
             detected_language = detect(text)
@@ -101,14 +167,14 @@ class Translate(commands.Cog):
 
         except Exception as e:
             await ctx.send(
-                f"❌ Language detection failed.\n"
+                "❌ Language detection failed.\n"
                 f"```{type(e).__name__}: {e}```"
             )
             return
 
-        # ---------------------------------------------------------
+        # -----------------------------------------------------
         # Language names
-        # ---------------------------------------------------------
+        # -----------------------------------------------------
 
         language_names = {
             "af": "Afrikaans",
@@ -177,18 +243,31 @@ class Translate(commands.Cog):
             detected_language.upper(),
         )
 
-        # ---------------------------------------------------------
+        # -----------------------------------------------------
         # Already English
-        # ---------------------------------------------------------
+        # -----------------------------------------------------
 
         if detected_language == "en":
             embed = discord.Embed(
                 title="🇬🇧 Translation",
-                description=(
-                    f"**Detected Language:** English\n\n"
-                    f"> {text[:4000]}"
-                ),
                 color=discord.Color.green(),
+            )
+
+            embed.add_field(
+                name="Detected Language",
+                value="English",
+                inline=True,
+            )
+
+            embed.add_field(
+                name="Translated To",
+                value="🇬🇧 English",
+                inline=True,
+            )
+
+            embed.description = (
+                f"**Text:**\n"
+                f"> {text[:3500]}"
             )
 
             if source_display:
@@ -199,39 +278,30 @@ class Translate(commands.Cog):
             await ctx.send(embed=embed)
             return
 
-        # ---------------------------------------------------------
-        # Translate using GoogleTranslator
-        # ---------------------------------------------------------
+        # -----------------------------------------------------
+        # Translate
+        # -----------------------------------------------------
 
         try:
-            translator = GoogleTranslator(
-                source="auto",
-                target="en",
-            )
+            async with ctx.typing():
+                translated = await self.translate_text(text)
 
-            translated = translator.translate(text)
+        except asyncio.TimeoutError:
+            await ctx.send(
+                "❌ The translation service took too long to respond."
+            )
+            return
 
         except Exception as e:
             await ctx.send(
                 "❌ **Translation failed.**\n"
-                "The translation service returned an error:\n"
                 f"```{type(e).__name__}: {e}```"
             )
             return
 
-        # ---------------------------------------------------------
-        # Make sure we actually received a translation
-        # ---------------------------------------------------------
-
-        if not translated:
-            await ctx.send(
-                "❌ The translation service returned an empty response."
-            )
-            return
-
-        # ---------------------------------------------------------
-        # Create response embed
-        # ---------------------------------------------------------
+        # -----------------------------------------------------
+        # Response
+        # -----------------------------------------------------
 
         embed = discord.Embed(
             title="🌐 Translation",
@@ -250,7 +320,6 @@ class Translate(commands.Cog):
             inline=True,
         )
 
-        # Discord embeds have a 4096 character description limit.
         original_text = text[:1500]
         translated_text = translated[:2000]
 
