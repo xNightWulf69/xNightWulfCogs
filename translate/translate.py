@@ -20,16 +20,20 @@ class Translate(commands.Cog):
     # MyMemory translation
     # ---------------------------------------------------------
 
-    async def translate_text(self, text: str) -> str:
+    async def translate_text(self, text: str, source_language: str) -> str:
         """Translate text to English using MyMemory."""
 
         def request():
             encoded_text = urllib.parse.quote(text)
 
+            # MyMemory requires an actual source language.
+            # langdetect gives us the ISO language code.
+            langpair = f"{source_language}|en"
+
             url = (
                 "https://api.mymemory.translated.net/get"
                 f"?q={encoded_text}"
-                "&langpair=auto|en"
+                f"&langpair={urllib.parse.quote(langpair)}"
             )
 
             request = urllib.request.Request(
@@ -41,7 +45,9 @@ class Translate(commands.Cog):
             )
 
             with urllib.request.urlopen(request, timeout=15) as response:
-                data = json.loads(response.read().decode("utf-8"))
+                data = json.loads(
+                    response.read().decode("utf-8")
+                )
 
             response_status = data.get("responseStatus")
 
@@ -52,12 +58,14 @@ class Translate(commands.Cog):
                 )
 
                 raise RuntimeError(
-                    f"MyMemory error {response_status}: {error_message}"
+                    f"MyMemory error {response_status}: "
+                    f"{error_message}"
                 )
 
-            translated = data.get("responseData", {}).get(
-                "translatedText"
-            )
+            translated = data.get(
+                "responseData",
+                {},
+            ).get("translatedText")
 
             if not translated:
                 raise RuntimeError(
@@ -100,15 +108,12 @@ class Translate(commands.Cog):
             try:
                 async for previous in ctx.channel.history(limit=20):
 
-                    # Ignore the command message itself
                     if previous.id == ctx.message.id:
                         continue
 
-                    # Ignore bot messages
                     if previous.author.bot:
                         continue
 
-                    # Ignore empty messages
                     if not previous.content.strip():
                         continue
 
@@ -266,7 +271,7 @@ class Translate(commands.Cog):
             )
 
             embed.description = (
-                f"**Text:**\n"
+                "**Text:**\n"
                 f"> {text[:3500]}"
             )
 
@@ -284,13 +289,10 @@ class Translate(commands.Cog):
 
         try:
             async with ctx.typing():
-                translated = await self.translate_text(text)
-
-        except asyncio.TimeoutError:
-            await ctx.send(
-                "❌ The translation service took too long to respond."
-            )
-            return
+                translated = await self.translate_text(
+                    text,
+                    detected_language,
+                )
 
         except Exception as e:
             await ctx.send(
