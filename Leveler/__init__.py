@@ -1,4 +1,4 @@
-from .leveler import Leveler
+from .Leveler import Leveler
 
 
 async def setup(bot):
