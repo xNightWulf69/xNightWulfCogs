@@ -1,3 +1,4 @@
+```python
 import discord
 from redbot.core import commands, Config
 import random
@@ -488,3 +489,4 @@ class Leveling(commands.Cog):
 
 async def setup(bot):
     await bot.add_cog(Leveling(bot))
+```
