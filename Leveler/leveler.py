@@ -26,7 +26,8 @@ class Leveling(commands.Cog):
             "max_xp": 15,
             "channel": None,
             "default_bg": None,
-            "mention": True
+            "mention": True,
+            "enabled": True
         }
 
         default_user = {
@@ -62,6 +63,10 @@ class Leveling(commands.Cog):
         guild = message.guild
         user = message.author
         uid = user.id
+
+        # Check if leveling is enabled in this server
+        if not await self.config.guild(guild).enabled():
+            return
 
         guild_conf = self.config.guild(guild)
 
@@ -133,6 +138,7 @@ class Leveling(commands.Cog):
                     data = await resp.read()
                     self.image_cache[url] = data
                     return data
+
         return None
 
     # ---------------- RANK CACHE ---------------- #
@@ -146,8 +152,10 @@ class Leveling(commands.Cog):
             all_users = await self.config.all_users()
 
             data = []
+
             for uid, udata in all_users.items():
                 member = guild.get_member(uid)
+
                 if member:
                     data.append((uid, udata["xp"]))
 
@@ -172,56 +180,128 @@ class Leveling(commands.Cog):
         user_conf = self.config.user(member)
 
         data = self.xp_cache.get(member.id)
+
         xp = data["xp"] if data else (await user_conf.xp())
+
         needed = self.get_cached_xp(level)
 
         rank = await self.get_rank(guild, member.id)
 
-        img = await self.make_image(member, level, xp, needed, rank, guild)
+        img = await self.make_image(
+            member,
+            level,
+            xp,
+            needed,
+            rank,
+            guild
+        )
 
         channel_id = await guild_conf.channel()
-        channel = guild.get_channel(channel_id) if channel_id else message.channel
+
+        channel = (
+            guild.get_channel(channel_id)
+            if channel_id
+            else message.channel
+        )
 
         mention = await guild_conf.mention()
 
-        text = f"🎉 {member.mention if mention else member.display_name} reached **Level {level}**!"
+        text = (
+            f"🎉 {member.mention if mention else member.display_name} "
+            f"reached **Level {level}**!"
+        )
 
-        await channel.send(content=text, file=discord.File(img, "levelup.png"))
+        await channel.send(
+            content=text,
+            file=discord.File(img, "levelup.png")
+        )
 
     # ---------------- IMAGE CREATION ---------------- #
 
     async def make_image(self, member, level, xp, needed, rank, guild):
         w, h = 900, 300
-        img = Image.new("RGB", (w, h), (25, 25, 25))
+
+        img = Image.new(
+            "RGB",
+            (w, h),
+            (25, 25, 25)
+        )
+
         draw = ImageDraw.Draw(img)
 
         user_conf = self.config.user(member)
         guild_conf = self.config.guild(guild)
 
-        bg_url = await user_conf.bg() or await guild_conf.default_bg()
+        bg_url = (
+            await user_conf.bg()
+            or await guild_conf.default_bg()
+        )
 
         if bg_url:
             bg_bytes = await self.fetch_image(bg_url)
+
             if bg_bytes:
-                bg = Image.open(io.BytesIO(bg_bytes)).convert("RGB")
+                bg = Image.open(
+                    io.BytesIO(bg_bytes)
+                ).convert("RGB")
+
                 bg = bg.resize((w, h))
+
                 img.paste(bg)
 
         # avatar
-        avatar_bytes = await self.fetch_image(str(member.display_avatar.url))
-        avatar = Image.open(io.BytesIO(avatar_bytes)).convert("RGB")
-        avatar = avatar.resize((180, 180))
+        avatar_bytes = await self.fetch_image(
+            str(member.display_avatar.url)
+        )
 
-        mask = Image.new("L", (180, 180), 0)
-        ImageDraw.Draw(mask).ellipse((0, 0, 180, 180), fill=255)
+        if avatar_bytes:
+            avatar = Image.open(
+                io.BytesIO(avatar_bytes)
+            ).convert("RGB")
 
-        img.paste(avatar, (30, 60), mask)
+            avatar = avatar.resize((180, 180))
+
+            mask = Image.new(
+                "L",
+                (180, 180),
+                0
+            )
+
+            ImageDraw.Draw(mask).ellipse(
+                (0, 0, 180, 180),
+                fill=255
+            )
+
+            img.paste(
+                avatar,
+                (30, 60),
+                mask
+            )
 
         # text
-        draw.text((240, 60), member.display_name, fill="white")
-        draw.text((240, 110), f"Level: {level}", fill="white")
-        draw.text((240, 150), f"XP: {xp}/{needed}", fill="white")
-        draw.text((240, 190), f"Rank: #{rank}", fill="white")
+        draw.text(
+            (240, 60),
+            member.display_name,
+            fill="white"
+        )
+
+        draw.text(
+            (240, 110),
+            f"Level: {level}",
+            fill="white"
+        )
+
+        draw.text(
+            (240, 150),
+            f"XP: {xp}/{needed}",
+            fill="white"
+        )
+
+        draw.text(
+            (240, 190),
+            f"Rank: #{rank}",
+            fill="white"
+        )
 
         # progress bar
         bar_x, bar_y = 240, 240
@@ -229,11 +309,34 @@ class Leveling(commands.Cog):
 
         progress = min(xp / needed, 1)
 
-        draw.rectangle([bar_x, bar_y, bar_x + bar_w, bar_y + bar_h], outline="white", width=2)
-        draw.rectangle([bar_x, bar_y, bar_x + int(bar_w * progress), bar_y + bar_h], fill=(0, 200, 255))
+        draw.rectangle(
+            [
+                bar_x,
+                bar_y,
+                bar_x + bar_w,
+                bar_y + bar_h
+            ],
+            outline="white",
+            width=2
+        )
+
+        draw.rectangle(
+            [
+                bar_x,
+                bar_y,
+                bar_x + int(bar_w * progress),
+                bar_y + bar_h
+            ],
+            fill=(0, 200, 255)
+        )
 
         buffer = io.BytesIO()
-        img.save(buffer, format="PNG")
+
+        img.save(
+            buffer,
+            format="PNG"
+        )
+
         buffer.seek(0)
 
         return buffer
@@ -249,67 +352,137 @@ class Leveling(commands.Cog):
     async def xp(self, ctx, min_xp: int, max_xp: int):
         await self.config.guild(ctx.guild).min_xp.set(min_xp)
         await self.config.guild(ctx.guild).max_xp.set(max_xp)
+
         await ctx.send("XP range updated.")
 
     @levelset.command()
     async def channel(self, ctx, channel: discord.TextChannel):
         await self.config.guild(ctx.guild).channel.set(channel.id)
-        await ctx.send(f"Level-up channel set to {channel.mention}")
+
+        await ctx.send(
+            f"Level-up channel set to {channel.mention}"
+        )
 
     @levelset.command()
     async def mention(self, ctx, toggle: bool):
         await self.config.guild(ctx.guild).mention.set(toggle)
-        await ctx.send(f"Mentions set to {toggle}")
+
+        await ctx.send(
+            f"Mentions set to {toggle}"
+        )
 
     @levelset.command()
     async def defaultbg(self, ctx, url: str):
         await self.config.guild(ctx.guild).default_bg.set(url)
-        await ctx.send("Default background updated.")
+
+        await ctx.send(
+            "Default background updated."
+        )
+
+    @levelset.command()
+    async def enabled(self, ctx, toggle: bool):
+        """Enable or disable leveling in this server."""
+
+        await self.config.guild(ctx.guild).enabled.set(toggle)
+
+        if toggle:
+            await ctx.send(
+                "✅ Leveling system enabled in this server."
+            )
+        else:
+            await ctx.send(
+                "⛔ Leveling system disabled in this server. "
+                "Existing level data has been preserved."
+            )
 
     # ---------------- USER COMMANDS ---------------- #
 
     @commands.command()
     async def setbg(self, ctx, url: str):
         await self.config.user(ctx.author).bg.set(url)
-        await ctx.send("Background updated.")
+
+        await ctx.send(
+            "Background updated."
+        )
 
     @commands.command()
-    async def profile(self, ctx, member: discord.Member = None):
+    async def profile(
+        self,
+        ctx,
+        member: discord.Member = None
+    ):
         member = member or ctx.author
 
         data = self.xp_cache.get(member.id)
+
         if not data:
             u = await self.config.user(member).all()
-            data = {"xp": u["xp"], "level": u["level"]}
+
+            data = {
+                "xp": u["xp"],
+                "level": u["level"]
+            }
 
         level = data["level"]
         xp = data["xp"]
-        needed = self.get_cached_xp(level + 1)
 
-        rank = await self.get_rank(ctx.guild, member.id)
+        needed = self.get_cached_xp(
+            level + 1
+        )
 
-        img = await self.make_image(member, level, xp, needed, rank, ctx.guild)
+        rank = await self.get_rank(
+            ctx.guild,
+            member.id
+        )
 
-        await ctx.send(file=discord.File(img, "profile.png"))
+        img = await self.make_image(
+            member,
+            level,
+            xp,
+            needed,
+            rank,
+            ctx.guild
+        )
+
+        await ctx.send(
+            file=discord.File(
+                img,
+                "profile.png"
+            )
+        )
 
     @commands.command()
     async def leaderboard(self, ctx):
         all_users = await self.config.all_users()
 
         data = []
+
         for uid, udata in all_users.items():
             member = ctx.guild.get_member(uid)
-            if member:
-                data.append((member.display_name, udata["xp"]))
 
-        data.sort(key=lambda x: x[1], reverse=True)
+            if member:
+                data.append(
+                    (
+                        member.display_name,
+                        udata["xp"]
+                    )
+                )
+
+        data.sort(
+            key=lambda x: x[1],
+            reverse=True
+        )
 
         desc = "\n".join(
             f"**{i+1}.** {name} — {xp} XP"
             for i, (name, xp) in enumerate(data[:10])
         )
 
-        embed = discord.Embed(title="Leaderboard", description=desc)
+        embed = discord.Embed(
+            title="Leaderboard",
+            description=desc
+        )
+
         await ctx.send(embed=embed)
 
 
